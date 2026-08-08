@@ -1,0 +1,224 @@
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { getDb } from "@/lib/db";
+import * as s from "@/lib/db/schema";
+
+export async function listEmpresas() {
+  const db = getDb();
+  return db.select().from(s.empresas).where(eq(s.empresas.activa, true));
+}
+
+export async function listTiposSolicitud(sector?: "GOBIERNO" | "PRIVADO") {
+  const db = getDb();
+  if (sector) {
+    return db
+      .select()
+      .from(s.tiposSolicitud)
+      .where(
+        and(eq(s.tiposSolicitud.activo, true), eq(s.tiposSolicitud.sector, sector)),
+      )
+      .orderBy(asc(s.tiposSolicitud.orden));
+  }
+  return db
+    .select()
+    .from(s.tiposSolicitud)
+    .where(eq(s.tiposSolicitud.activo, true))
+    .orderBy(asc(s.tiposSolicitud.orden));
+}
+
+export async function listExpedientes() {
+  const db = getDb();
+  return db
+    .select({
+      id: s.expedientes.id,
+      codigo: s.expedientes.codigo,
+      estatus: s.expedientes.estatus,
+      aptoRequisitos: s.expedientes.aptoRequisitos,
+      markupPct: s.expedientes.markupPct,
+      criterioSeleccion: s.expedientes.criterioSeleccion,
+      updatedAt: s.expedientes.updatedAt,
+      titulo: s.solicitudes.titulo,
+      sector: s.solicitudes.sector,
+      folioExterno: s.solicitudes.folioExterno,
+      empresaCodigo: s.empresas.codigo,
+      empresaNombre: s.empresas.razonSocial,
+      tipoNombre: s.tiposSolicitud.nombre,
+      clienteNombre: s.clientes.razonSocial,
+      responsableNombre: s.users.name,
+    })
+    .from(s.expedientes)
+    .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
+    .innerJoin(s.empresas, eq(s.expedientes.empresaId, s.empresas.id))
+    .innerJoin(
+      s.tiposSolicitud,
+      eq(s.solicitudes.tipoSolicitudId, s.tiposSolicitud.id),
+    )
+    .leftJoin(s.clientes, eq(s.solicitudes.clienteId, s.clientes.id))
+    .leftJoin(s.users, eq(s.expedientes.responsableActualId, s.users.id))
+    .orderBy(desc(s.expedientes.updatedAt));
+}
+
+export async function getExpedienteById(id: string) {
+  const db = getDb();
+  const [exp] = await db
+    .select({
+      id: s.expedientes.id,
+      codigo: s.expedientes.codigo,
+      estatus: s.expedientes.estatus,
+      aptoRequisitos: s.expedientes.aptoRequisitos,
+      aptoNotas: s.expedientes.aptoNotas,
+      markupPct: s.expedientes.markupPct,
+      criterioSeleccion: s.expedientes.criterioSeleccion,
+      solicitudId: s.expedientes.solicitudId,
+      empresaId: s.expedientes.empresaId,
+      titulo: s.solicitudes.titulo,
+      sector: s.solicitudes.sector,
+      folioExterno: s.solicitudes.folioExterno,
+      caracter: s.solicitudes.caracter,
+      empresaCodigo: s.empresas.codigo,
+      tipoNombre: s.tiposSolicitud.nombre,
+      tipoId: s.tiposSolicitud.id,
+      clienteId: s.clientes.id,
+      clienteNombre: s.clientes.razonSocial,
+      responsableId: s.expedientes.responsableActualId,
+      responsableNombre: s.users.name,
+    })
+    .from(s.expedientes)
+    .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
+    .innerJoin(s.empresas, eq(s.expedientes.empresaId, s.empresas.id))
+    .innerJoin(
+      s.tiposSolicitud,
+      eq(s.solicitudes.tipoSolicitudId, s.tiposSolicitud.id),
+    )
+    .leftJoin(s.clientes, eq(s.solicitudes.clienteId, s.clientes.id))
+    .leftJoin(s.users, eq(s.expedientes.responsableActualId, s.users.id))
+    .where(eq(s.expedientes.id, id))
+    .limit(1);
+
+  if (!exp) return null;
+
+  const partidas = await db
+    .select()
+    .from(s.partidas)
+    .where(eq(s.partidas.expedienteId, id))
+    .orderBy(asc(s.partidas.numero));
+
+  const cotizaciones = await db
+    .select({
+      id: s.cotizacionesProveedor.id,
+      alias: s.cotizacionesProveedor.aliasEnExpediente,
+      proveedorId: s.cotizacionesProveedor.proveedorId,
+      proveedorNombre: s.proveedores.razonSocial,
+      incluyeIva: s.cotizacionesProveedor.incluyeIva,
+      tiempoEntregaDias: s.cotizacionesProveedor.tiempoEntregaDias,
+      parseStatus: s.cotizacionesProveedor.parseStatus,
+    })
+    .from(s.cotizacionesProveedor)
+    .innerJoin(
+      s.proveedores,
+      eq(s.cotizacionesProveedor.proveedorId, s.proveedores.id),
+    )
+    .where(eq(s.cotizacionesProveedor.expedienteId, id))
+    .orderBy(asc(s.cotizacionesProveedor.aliasEnExpediente));
+
+  const cotIds = cotizaciones.map((c) => c.id);
+  const lineas =
+    cotIds.length === 0
+      ? []
+      : await db
+          .select()
+          .from(s.cotizacionPartidas)
+          .where(inArray(s.cotizacionPartidas.cotizacionId, cotIds));
+
+  const bitacora = await db
+    .select({
+      id: s.bitacora.id,
+      accion: s.bitacora.accion,
+      deEstatus: s.bitacora.deEstatus,
+      aEstatus: s.bitacora.aEstatus,
+      createdAt: s.bitacora.createdAt,
+      usuarioNombre: s.users.name,
+    })
+    .from(s.bitacora)
+    .leftJoin(s.users, eq(s.bitacora.userId, s.users.id))
+    .where(eq(s.bitacora.expedienteId, id))
+    .orderBy(desc(s.bitacora.createdAt))
+    .limit(40);
+
+  const requisitos = await db
+    .select()
+    .from(s.requisitosExpediente)
+    .where(eq(s.requisitosExpediente.expedienteId, id));
+
+  const finales = await db
+    .select()
+    .from(s.cotizacionesFinales)
+    .where(eq(s.cotizacionesFinales.expedienteId, id))
+    .orderBy(desc(s.cotizacionesFinales.version));
+
+  return {
+    ...exp,
+    partidas,
+    cotizaciones,
+    lineas,
+    bitacora,
+    requisitos,
+    finales,
+  };
+}
+
+export async function listDocumentosEmpresa(empresaId?: string) {
+  const db = getDb();
+  const base = db
+    .select({
+      id: s.documentosEmpresa.id,
+      nombre: s.documentosEmpresa.nombre,
+      categoria: s.documentosEmpresa.categoria,
+      fechaVencimiento: s.documentosEmpresa.fechaVencimiento,
+      estado: s.documentosEmpresa.estado,
+      empresaId: s.documentosEmpresa.empresaId,
+      empresaCodigo: s.empresas.codigo,
+      storagePath: s.documentosEmpresa.storagePath,
+      notas: s.documentosEmpresa.notas,
+    })
+    .from(s.documentosEmpresa)
+    .innerJoin(s.empresas, eq(s.documentosEmpresa.empresaId, s.empresas.id));
+
+  if (empresaId) {
+    return base
+      .where(eq(s.documentosEmpresa.empresaId, empresaId))
+      .orderBy(asc(s.documentosEmpresa.nombre));
+  }
+  return base.orderBy(asc(s.empresas.codigo), asc(s.documentosEmpresa.nombre));
+}
+
+export async function nextExpedienteCodigo(empresaId: string) {
+  const db = getDb();
+  const [emp] = await db
+    .select()
+    .from(s.empresas)
+    .where(eq(s.empresas.id, empresaId))
+    .limit(1);
+  if (!emp) throw new Error("Empresa no encontrada");
+  const year = new Date().getFullYear();
+  const rows = await db
+    .select({ codigo: s.expedientes.codigo })
+    .from(s.expedientes)
+    .where(eq(s.expedientes.empresaId, empresaId));
+  const seq = rows.filter((r) => r.codigo.includes(`-${year}-`)).length + 1;
+  return `YLK-${emp.codigo}-${year}-${String(seq).padStart(5, "0")}`;
+}
+
+export type EstadoDoc = "VIGENTE" | "POR_VENCER" | "VENCIDO" | "NO_APLICA";
+
+export function calcEstadoDoc(fechaVencimiento: Date | null): EstadoDoc {
+  if (!fechaVencimiento) return "NO_APLICA";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const v = new Date(fechaVencimiento);
+  v.setHours(0, 0, 0, 0);
+  const in30 = new Date(today);
+  in30.setDate(in30.getDate() + 30);
+  if (v < today) return "VENCIDO";
+  if (v < in30) return "POR_VENCER";
+  return "VIGENTE";
+}

@@ -5,7 +5,7 @@
 ## Progress bar
 
 ```
-████████████░░░░░░░░  ~55%  Neon conectado · tablas + seed OK
+██████████████░░░░░░  ~65%  Expedientes reales en Neon (sin UI demo)
 ```
 
 | # | Entregable | Estado |
@@ -14,7 +14,7 @@
 | 2 | UI glass iOS + temas | ✅ |
 | 3 | Schema Postgres (Drizzle) expediente/cotizaciones/remisiones/workflow | ✅ |
 | 4 | Workflow editable + roles | ✅ |
-| 5 | Pipeline Comercial + comparativo iluminado | ✅ UI demo |
+| 5 | Pipeline Comercial + comparativo iluminado | ✅ **persistente Neon** |
 | 6 | Parser Excel determinista | ✅ |
 | 7 | **Neon + Auth.js + Blob/local storage** | ✅ conectado · schema + seed aplicados |
 | 8 | Vercel deploy + Tunnel/dominio | ⬜ |
