@@ -16,7 +16,7 @@
 | 4 | Workflow editable + roles (Laura, Miguel×2, Itza, Nesim, Fernando) | ✅ migraciones + UI admin |
 | 5 | Pipeline Comercial + expediente demo (comparativo iluminado, markup, P1/P2) | ✅ UI demo |
 | 6 | Parser Excel determinista (lista limpia / cotizaciones) | ✅ lib |
-| 7 | Proyecto Supabase cloud + Auth real + aplicar migraciones | ⬜ **necesita tu proyecto** |
+| 7 | Backend cloud (Supabase atorado → ver alternativas Neon) | ⬜ ver [`BACKEND-OPTIONS.md`](./BACKEND-OPTIONS.md) |
 | 8 | Vercel deploy + Tunnel/dominio | ⬜ |
 | 9 | Módulo Laura: docs empresa + caducidad + checklist requisitos | ⬜ UI parcial → conectar Storage |
 | 10 | Parse PDF/Word/imagen (Document AI / Textract) + confirmación humana | ⬜ |
