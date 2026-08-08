@@ -15,7 +15,7 @@
 | 3 | Schema Postgres (Drizzle) expediente/cotizaciones/remisiones/workflow | ✅ |
 | 4 | Workflow editable + roles | ✅ |
 | 5 | Pipeline Comercial + comparativo iluminado | ✅ **persistente Neon** |
-| 6 | Parser Excel determinista | ✅ |
+| 6 | Parser Excel determinista | ✅ UI import lista limpia + cotización proveedor |
 | 7 | **Neon + Auth.js + Blob/local storage** | ✅ conectado · schema + seed aplicados |
 | 8 | Vercel deploy + Tunnel/dominio | ✅ https://ylika-ops.vercel.app |
 | 9 | Módulo Laura: docs empresa + caducidad + luz verde | ✅ DB + UI (falta upload Storage) |
