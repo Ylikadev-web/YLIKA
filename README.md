@@ -1,44 +1,49 @@
-# YLIKA — Plataforma ERP / BOS / CRM
+# YLIKA Ops Platform
 
-Repositorio del grupo **YLIKA** (MONE · DAKAM · NARAMO).
+Plataforma ERP / BOS / CRM del grupo **YLIKA** (MONE · DAKAM · NARAMO).
 
-## Estado actual
+## Desarrollo activo — Full Cloud
 
-Este repo está en **fase de planificación**. Aún no hay código de aplicación.
+| Pieza | Ahora | Luego |
+|-------|--------|--------|
+| App | `web/` Next.js | Deploy Vercel |
+| Datos | — | Supabase (Postgres + Auth + Storage) |
+| Links temporales | **Cloudflare Tunnel** (`*.trycloudflare.com`) | Dominio propio / Vercel |
+| UI | Glass iOS-like + temas | Preferencias en perfil |
 
-## Dos propuestas de infraestructura (conviven)
-
-| | Propuesta A | Propuesta B |
-|---|-------------|-------------|
-| Enfoque | Servidor Linux + Cloudflare Tunnel | **Full cloud** |
-| Stack | GitHub · Postgres propio · Docker · CF | **GitHub · Supabase · Vercel** (+ CF DNS) |
-| Doc | [`docs/PLAN-YLIKA.md`](docs/PLAN-YLIKA.md) | [`docs/PLAN-YLIKA-CLOUD.md`](docs/PLAN-YLIKA-CLOUD.md) |
-| PDF | [`docs/YLIKA-Propuesta-Visual.pdf`](docs/YLIKA-Propuesta-Visual.pdf) | [`docs/YLIKA-Propuesta-Cloud.pdf`](docs/YLIKA-Propuesta-Cloud.pdf) |
-
-El **modelo de entidades, menú y UI** son compartidos (definidos en A; B solo cambia el hosting).
-
-## Documentos
-
-| Archivo | Descripción |
-|---------|-------------|
-| [`docs/PLAN-YLIKA.md`](docs/PLAN-YLIKA.md) | Propuesta A: Linux, ER, menú, tipos, fases |
-| [`docs/PLAN-YLIKA-CLOUD.md`](docs/PLAN-YLIKA-CLOUD.md) | Propuesta B: GitHub + Supabase + Vercel |
-| [`docs/YLIKA-Propuesta-Visual.pdf`](docs/YLIKA-Propuesta-Visual.pdf) | Wireframes UI (~60 KB) |
-| [`docs/YLIKA-Propuesta-Cloud.pdf`](docs/YLIKA-Propuesta-Cloud.pdf) | Resumen visual cloud (~liviano) |
-| [`Designer.png`](Designer.png) | Logo de marca YLIKA |
-
-Regenerar PDFs:
+### Arranque local
 
 ```bash
-pip install reportlab
-python3 docs/generate_proposal_pdf.py
-python3 docs/generate_cloud_pdf.py
+cd web
+npm install
+npm run dev
 ```
 
-## Privacidad del repo
+### Link temporal con Cloudflare (sin usar tus dominios)
 
-Se recomienda mantener este repositorio en **privado** (código interno, roles, procesos comerciales).
+```bash
+# con el dev server corriendo en :3000
+cloudflared tunnel --url http://localhost:3000
+```
 
-## Próximo paso
+Detalle: [`docs/DEV-CLOUD.md`](docs/DEV-CLOUD.md)
 
-Elegir A, B o híbrido; validar el modelo entidad-relación; después Fase 0.
+### Dirección visual
+
+- Material **glass** (blur + saturación, scrims translúcidos)
+- Modales emergentes dentro de la app (estilo iOS / vibrancy)
+- Temas en **Configuración**: Obsidian, Frost, Aurora, Graphite
+- Tipografía Sora + Manrope · acentos YLIKA (teal / naranja / amarillo)
+
+## Planificación (intacta)
+
+| Doc | Contenido |
+|-----|-----------|
+| [`docs/PLAN-YLIKA.md`](docs/PLAN-YLIKA.md) | Propuesta A · Linux |
+| [`docs/PLAN-YLIKA-CLOUD.md`](docs/PLAN-YLIKA-CLOUD.md) | Propuesta B · Full cloud |
+| [`docs/YLIKA-Propuesta-Visual.pdf`](docs/YLIKA-Propuesta-Visual.pdf) | Wireframes iniciales |
+| [`docs/YLIKA-Propuesta-Cloud.pdf`](docs/YLIKA-Propuesta-Cloud.pdf) | Resumen cloud |
+
+## Privacidad
+
+Mantener el repositorio **privado**.

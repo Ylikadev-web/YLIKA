@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+/* ─── Fonts wired via next/font variables ─── */
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-muted: var(--text-muted);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+  --color-danger: var(--danger);
+}
+
+/* ─── Theme tokens ─── */
+:root,
+[data-theme="obsidian"] {
+  --bg: #07090c;
+  --bg-elevated: #0e1218;
+  --text: #f2f4f7;
+  --text-muted: #9aa3ad;
+  --accent: #0aa3a8;
+  --accent-2: #f39200;
+  --accent-3: #ffd100;
+  --glass: rgba(22, 26, 32, 0.55);
+  --glass-strong: rgba(18, 22, 28, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.18);
+  --shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  --ring: rgba(10, 163, 168, 0.45);
+  --danger: #ff6b6b;
+  --atmosphere-1: radial-gradient(ellipse 80% 60% at 10% 0%, rgba(10, 163, 168, 0.28), transparent 55%);
+  --atmosphere-2: radial-gradient(ellipse 70% 50% at 90% 10%, rgba(243, 146, 0, 0.18), transparent 50%);
+  --atmosphere-3: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255, 209, 0, 0.08), transparent 55%);
+  --noise-opacity: 0.04;
+  color-scheme: dark;
+}
+
+[data-theme="frost"] {
+  --bg: #e7eef6;
+  --bg-elevated: #f7fafc;
+  --text: #12161c;
+  --text-muted: #5c6672;
+  --accent: #0a8f94;
+  --accent-2: #e88400;
+  --accent-3: #d4a800;
+  --glass: rgba(255, 255, 255, 0.52);
+  --glass-strong: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(15, 23, 42, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.85);
+  --shadow: 0 24px 60px rgba(15, 40, 70, 0.12);
+  --ring: rgba(10, 143, 148, 0.35);
+  --danger: #d64545;
+  --atmosphere-1: radial-gradient(ellipse 80% 60% at 0% 0%, rgba(10, 143, 148, 0.2), transparent 55%);
+  --atmosphere-2: radial-gradient(ellipse 70% 50% at 100% 0%, rgba(232, 132, 0, 0.14), transparent 50%);
+  --atmosphere-3: radial-gradient(ellipse 50% 40% at 50% 100%, rgba(255, 255, 255, 0.8), transparent 60%);
+  --noise-opacity: 0.03;
+  color-scheme: light;
+}
+
+[data-theme="aurora"] {
+  --bg: #041016;
+  --bg-elevated: #0a1c24;
+  --text: #ecfeff;
+  --text-muted: #8bb8bf;
+  --accent: #2dd4bf;
+  --accent-2: #fbbf24;
+  --accent-3: #f472b6;
+  --glass: rgba(8, 32, 40, 0.5);
+  --glass-strong: rgba(6, 28, 36, 0.7);
+  --glass-border: rgba(45, 212, 191, 0.18);
+  --glass-highlight: rgba(45, 212, 191, 0.22);
+  --shadow: 0 30px 90px rgba(0, 20, 30, 0.55);
+  --ring: rgba(45, 212, 191, 0.4);
+  --danger: #fb7185;
+  --atmosphere-1: radial-gradient(ellipse 90% 70% at 15% 15%, rgba(45, 212, 191, 0.35), transparent 55%);
+  --atmosphere-2: radial-gradient(ellipse 80% 60% at 85% 20%, rgba(251, 191, 36, 0.22), transparent 50%);
+  --atmosphere-3: radial-gradient(ellipse 70% 50% at 60% 90%, rgba(244, 114, 182, 0.12), transparent 55%);
+  --noise-opacity: 0.05;
+  color-scheme: dark;
+}
+
+[data-theme="graphite"] {
+  --bg: #121416;
+  --bg-elevated: #1a1d21;
+  --text: #eceff1;
+  --text-muted: #8b929a;
+  --accent: #c5ccd3;
+  --accent-2: #f39200;
+  --accent-3: #ffd100;
+  --glass: rgba(255, 255, 255, 0.05);
+  --glass-strong: rgba(28, 31, 36, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-highlight: rgba(255, 255, 255, 0.14);
+  --shadow: 0 20px 70px rgba(0, 0, 0, 0.5);
+  --ring: rgba(243, 146, 0, 0.4);
+  --danger: #ff7b72;
+  --atmosphere-1: radial-gradient(ellipse 70% 50% at 20% 0%, rgba(197, 204, 211, 0.1), transparent 50%);
+  --atmosphere-2: radial-gradient(ellipse 60% 40% at 90% 10%, rgba(243, 146, 0, 0.16), transparent 50%);
+  --atmosphere-3: radial-gradient(ellipse 50% 40% at 40% 100%, rgba(255, 209, 0, 0.06), transparent 50%);
+  --noise-opacity: 0.045;
+  color-scheme: dark;
+}
+
+/* Fix typo in aurora bg if any - I wrote #071 intermediate by mistake in themes.ts preview only */
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Atmospheric stage behind everything */
+.app-atmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background:
+    var(--atmosphere-1),
+    var(--atmosphere-2),
+    var(--atmosphere-3),
+    var(--bg);
+}
+
+.app-atmosphere::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: var(--noise-opacity);
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  mix-blend-mode: overlay;
+}
+
+/* Glass material */
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow), inset 0 1px 0 var(--glass-highlight);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+}
+
+.glass-strong {
+  background: var(--glass-strong);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow), inset 0 1px 0 var(--glass-highlight);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+}
+
+.glass-thin {
+  background: color-mix(in srgb, var(--glass) 70%, transparent);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+/* Modal dimming with vibrancy */
+.glass-scrim {
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+.display {
+  font-family: var(--font-display), var(--font-body), sans-serif;
+  letter-spacing: -0.03em;
+}
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Scrollbar subtle */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-muted) 40%, transparent) transparent;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+  color: var(--text);
+}

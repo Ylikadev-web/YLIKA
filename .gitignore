@@ -4,6 +4,12 @@ __pycache__/
 .env.*
 !.env.example
 node_modules/
+.next/
+out/
 .DS_Store
 *.log
 .venv/
+.vercel/
+web/node_modules/
+web/.next/
+web/out/
