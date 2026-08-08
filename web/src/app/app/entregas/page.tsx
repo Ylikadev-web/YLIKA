@@ -22,7 +22,6 @@ export default async function EntregasPage() {
   return (
     <AppShell
       title="Entregas / Remisiones"
-      subtitle="Al marcar entregada el expediente pasa a cobranza para Itza."
     >
       <Glass className="mb-4 p-5">
         <h2 className="display text-lg font-semibold">Nueva remisión</h2>

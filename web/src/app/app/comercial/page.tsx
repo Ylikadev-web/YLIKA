@@ -35,7 +35,6 @@ export default async function ComercialPage() {
   return (
     <AppShell
       title="Comercial"
-      subtitle="Expedientes reales en Neon — pipeline Laura → Ventas → Itza → Nesim."
       actions={
         <Link href="/app/comercial/nuevo">
           <Button>+ Nueva solicitud</Button>

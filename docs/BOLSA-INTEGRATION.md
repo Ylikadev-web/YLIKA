@@ -1,20 +1,30 @@
-# Integración Administración de Bolsa
+# Bolsa nativa en YLIKA Ops
 
-Repo existente: https://github.com/Ylikadev-web/Administraci-n-de-Bolsa
+La funcionalidad de **Administración de Bolsa** vive ahora dentro de
+`/app/tesoreria` (menú **Bolsa**), sobre el mismo Neon de YLIKA.
 
-## Enfoque recomendado (fases)
+Repo de referencia (proyecto aparte, misma lógica de dominio):
+https://github.com/Ylikadev-web/Administraci-n-de-Bolsa
 
-### Fase A — Bridge (rápido)
-- Entrada en menú **Tesorería / Config** → abre Bolsa (URL Vercel) en nueva pestaña o iframe.
-- Tabla `modulos_externos` (`codigo=BOLSA`) editable por ADMIN_SISTEMAS.
-- Misma gente (Itza, Nesim); auth separada al inicio si hace falta.
+## Qué está replicado
 
-### Fase B — SSO ligero
-- Mismo proveedor Auth (Supabase org) o magic-link bridge.
-- Deep-link desde remisión/expediente → movimiento de bolsa sugerido.
+| Concepto | Implementación |
+|----------|----------------|
+| Bolsa propia | Alta libre + movimientos activos |
+| Bolsa General | Una activa; movimientos con aprobación |
+| Bolsa asignada | Solo admin (Nesim/Itza/Sistemas) asigna |
+| Movimientos | ingreso / gasto / aportes · estados pendiente / activo / rechazado / anulado |
+| Préstamos | naturaleza `prestamo` + plazo 7/15/30/60 |
+| Saldo | Calculado desde movimientos `activo` |
+| Archivar | Solo con saldo 0 |
 
-### Fase C — Unificación (opcional)
-- Mover schema de bolsas al mismo proyecto Supabase YLIKA como schema `bolsa`.
-- Un solo login YLIKA Ops.
+## Roles
 
-**No reescribimos Bolsa desde cero.** La reutilizamos; el ADMIN mueve URL/visibilidad.
+- `DIRECTOR`, `ADMIN_FINANZAS`, `ADMIN_SISTEMAS` → admin de bolsa (aprueban)
+- Cualquier usuario autenticado → bolsas propias + ve General
+
+## Tablas Neon
+
+`bolsas`, `bolsa_miembros`, `bolsa_categorias`, `bolsa_movimientos`
+
+No se embebe el otro proyecto por URL: son dos apps, misma capacidad aquí.

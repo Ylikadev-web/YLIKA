@@ -36,7 +36,6 @@ export default async function LicitacionesPage() {
   return (
     <AppShell
       title="Licitaciones"
-      subtitle="Espacio Laura: documentos de empresa con caducidad real + expedientes en revisión."
     >
       <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
         <Glass className="p-5">

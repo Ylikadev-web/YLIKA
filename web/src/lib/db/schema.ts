@@ -490,6 +490,122 @@ export const modulosExternos = pgTable("modulos_externos", {
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+// ── Bolsa (réplica nativa del sistema Administración de Bolsa) ────────
+export const tipoMovimientoBolsaEnum = pgEnum("tipo_movimiento_bolsa", [
+  "saldo_apertura",
+  "ingreso",
+  "gasto",
+  "transferencia_interna",
+  "aporte_enviado",
+  "aporte_recibido",
+]);
+
+export const naturalezaAporteEnum = pgEnum("naturaleza_aporte", [
+  "prestamo",
+  "pago_deuda",
+  "reembolso",
+  "cooperacion",
+]);
+
+export const estadoMovimientoBolsaEnum = pgEnum("estado_movimiento_bolsa", [
+  "pendiente_aprobacion",
+  "activo",
+  "rechazado",
+  "anulado",
+]);
+
+export const bolsas = pgTable("bolsas", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  nombre: text("nombre").notNull(),
+  descripcion: text("descripcion"),
+  color: text("color").notNull().default("#eab308"),
+  icono: text("icono").default("wallet"),
+  moneda: text("moneda").notNull().default("MXN"),
+  esGeneral: boolean("es_general").notNull().default(false),
+  parentId: uuid("parent_id"),
+  assignedByAdminId: uuid("assigned_by_admin_id").references(() => users.id),
+  archivada: boolean("archivada").notNull().default(false),
+  archivadaAt: timestamp("archivada_at", { mode: "date" }),
+  permiteSaldoNegativo: boolean("permite_saldo_negativo").notNull().default(false),
+  metaHabilitada: boolean("meta_habilitada").notNull().default(false),
+  metaMonto: numeric("meta_monto", { precision: 14, scale: 2 }),
+  metaFecha: timestamp("meta_fecha", { mode: "date" }),
+  createdBy: uuid("created_by")
+    .notNull()
+    .references(() => users.id),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+});
+
+export const bolsaMiembros = pgTable(
+  "bolsa_miembros",
+  {
+    bolsaId: uuid("bolsa_id")
+      .notNull()
+      .references(() => bolsas.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    addedBy: uuid("added_by").references(() => users.id),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.bolsaId, t.userId] })],
+);
+
+export const bolsaCategorias = pgTable(
+  "bolsa_categorias",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    nombre: text("nombre").notNull(),
+    tipo: text("tipo").notNull().default("ambos"),
+    color: text("color").notNull().default("#64748b"),
+    icono: text("icono"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("bolsa_cat_user_nombre").on(t.userId, t.nombre, t.tipo)],
+);
+
+export const bolsaMovimientos = pgTable("bolsa_movimientos", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  bolsaId: uuid("bolsa_id")
+    .notNull()
+    .references(() => bolsas.id, { onDelete: "cascade" }),
+  tipo: tipoMovimientoBolsaEnum("tipo").notNull(),
+  monto: numeric("monto", { precision: 14, scale: 2 }).notNull(),
+  moneda: text("moneda").notNull().default("MXN"),
+  categoriaId: uuid("categoria_id").references(() => bolsaCategorias.id, {
+    onDelete: "set null",
+  }),
+  descripcion: text("descripcion"),
+  fechaSolicitud: timestamp("fecha_solicitud", { mode: "date" })
+    .notNull()
+    .defaultNow(),
+  fechaEjecucion: timestamp("fecha_ejecucion", { mode: "date" }),
+  estado: estadoMovimientoBolsaEnum("estado")
+    .notNull()
+    .default("activo"),
+  autorId: uuid("autor_id")
+    .notNull()
+    .references(() => users.id),
+  aprobadoPor: uuid("aprobado_por").references(() => users.id),
+  aprobadoAt: timestamp("aprobado_at", { mode: "date" }),
+  motivoRechazo: text("motivo_rechazo"),
+  anuladoAt: timestamp("anulado_at", { mode: "date" }),
+  anuladoPor: uuid("anulado_por").references(() => users.id),
+  motivoAnulacion: text("motivo_anulacion"),
+  naturalezaAporte: naturalezaAporteEnum("naturaleza_aporte"),
+  plazoDias: integer("plazo_dias"),
+  fechaVencimiento: timestamp("fecha_vencimiento", { mode: "date" }),
+  prestamoId: uuid("prestamo_id"),
+  contraparteBolsaId: uuid("contraparte_bolsa_id").references(() => bolsas.id),
+  contraparteUserId: uuid("contraparte_user_id").references(() => users.id),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   roles: many(usuarioRoles),
   empresas: many(usuarioEmpresas),

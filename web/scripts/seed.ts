@@ -273,11 +273,95 @@ async function main() {
     }
   }
 
+  // Bolsa General + bolsa propia Itza (réplica nativa)
+  const [nesim] = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.email, "nesim@ylika.local"))
+    .limit(1);
+  const [itza] = await db
+    .select()
+    .from(schema.users)
+    .where(eq(schema.users.email, "itza@ylika.local"))
+    .limit(1);
+  const bolsaOwner = nesim ?? itza ?? admin;
+
+  const [general] = await db
+    .select()
+    .from(schema.bolsas)
+    .where(eq(schema.bolsas.esGeneral, true))
+    .limit(1);
+
+  if (!general) {
+    const [g] = await db
+      .insert(schema.bolsas)
+      .values({
+        nombre: "Bolsa General",
+        descripcion: "Fondo compartido del grupo",
+        color: "#eab308",
+        icono: "users",
+        esGeneral: true,
+        createdBy: bolsaOwner.id,
+      })
+      .returning();
+    for (const u of [bolsaOwner, itza, admin].filter(Boolean)) {
+      if (!u) continue;
+      await db
+        .insert(schema.bolsaMiembros)
+        .values({ bolsaId: g.id, userId: u.id, addedBy: bolsaOwner.id })
+        .onConflictDoNothing();
+    }
+    await db.insert(schema.bolsaMovimientos).values({
+      bolsaId: g.id,
+      tipo: "saldo_apertura",
+      monto: "50000",
+      descripcion: "Apertura Bolsa General",
+      autorId: bolsaOwner.id,
+      estado: "activo",
+      fechaEjecucion: new Date(),
+      aprobadoPor: bolsaOwner.id,
+      aprobadoAt: new Date(),
+    });
+  }
+
+  if (itza) {
+    const propias = await db
+      .select()
+      .from(schema.bolsas)
+      .where(eq(schema.bolsas.createdBy, itza.id));
+    if (!propias.some((b) => !b.esGeneral && !b.assignedByAdminId)) {
+      const [propia] = await db
+        .insert(schema.bolsas)
+        .values({
+          nombre: "Operación Itza",
+          color: "#0ea5e9",
+          icono: "wallet",
+          createdBy: itza.id,
+        })
+        .returning();
+      await db.insert(schema.bolsaMiembros).values({
+        bolsaId: propia.id,
+        userId: itza.id,
+        addedBy: itza.id,
+      });
+      await db.insert(schema.bolsaMovimientos).values({
+        bolsaId: propia.id,
+        tipo: "saldo_apertura",
+        monto: "12000",
+        descripcion: "Saldo inicial",
+        autorId: itza.id,
+        estado: "activo",
+        fechaEjecucion: new Date(),
+      });
+    }
+  }
+
   console.log("✅ Seed OK");
   console.log(`   Admin: ${email}`);
   console.log(`   Password: ${password}`);
   console.log(`   Equipo: Laura, Fernando, Itza, Nesim (misma password)`);
   console.log(`   Empresas: ${allEmpresas.map((e) => e.codigo).join(", ")}`);
+  console.log(`   Bolsa: General + propias (Tesorería nativa)`);
 }
 
 main().catch((err) => {

@@ -13,7 +13,6 @@ export default async function DocumentosPage() {
   return (
     <AppShell
       title="Documentos"
-      subtitle="Metadatos reales en Neon. La subida binaria usa Vercel Blob / uploads locales por expediente."
     >
       <Glass className="mb-4 p-5">
         <h2 className="display text-lg font-semibold">Registrar documento (metadata)</h2>

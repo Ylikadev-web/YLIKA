@@ -26,7 +26,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/app/compras", label: "Compras", icon: ShoppingCart },
   { href: "/app/entregas", label: "Entregas", icon: Truck },
   { href: "/app/clientes", label: "Clientes", icon: Users },
-  { href: "/app/tesoreria", label: "Tesorería", icon: Landmark },
+  { href: "/app/tesoreria", label: "Bolsa", icon: Landmark },
   { href: "/app/proyectos", label: "Proyectos", icon: FolderKanban },
   { href: "/app/licitaciones", label: "Licitaciones", icon: Gavel },
   { href: "/app/obra", label: "Obra Pública", icon: Package },

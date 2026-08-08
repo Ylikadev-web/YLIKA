@@ -12,7 +12,6 @@ export default async function ClientesPage() {
   return (
     <AppShell
       title="Clientes"
-      subtitle="Catálogo real en Neon. Los expedientes comerciales se vinculan a estos registros."
     >
       <Glass className="mb-4 p-5">
         <h2 className="display text-lg font-semibold">Nuevo cliente</h2>

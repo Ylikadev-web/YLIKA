@@ -12,7 +12,6 @@ export default async function ObraPage() {
   return (
     <AppShell
       title="Obra Pública"
-      subtitle="Expedientes de sector GOBIERNO. La revisión documental vive en Licitaciones."
     >
       <Glass className="overflow-hidden">
         <table className="w-full text-left text-sm">

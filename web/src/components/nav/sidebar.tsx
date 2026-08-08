@@ -70,14 +70,8 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-auto space-y-2 px-1">
-        <div className="glass-thin rounded-2xl px-3 py-3">
-          <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
-            Empresa activa
-          </p>
-          <p className="mt-1 text-sm font-medium">MONE</p>
-          <p className="text-xs text-[var(--text-muted)]">
-            Distribuidora de Materiales
-          </p>
+        <div className="glass-thin rounded-2xl px-3 py-2.5">
+          <p className="text-sm font-medium">MONE</p>
         </div>
         <UserMenu />
       </div>

@@ -5,7 +5,7 @@
 ## Progress bar
 
 ```
-█████████████████░░░  ~82%  Todos los módulos nav con UI real Neon
+██████████████████░░  ~88%  Bolsa nativa + bot pendientes + UI limpia
 ```
 
 | # | Entregable | Estado |
@@ -22,10 +22,12 @@
 | 10 | Parse PDF/Word/imagen (Document AI / Textract) + confirmación humana | ⬜ |
 | 11 | Generar PDF cotización final (sin mostrar %) | ⬜ |
 | 12 | Remisiones + folio + handoff Itza | ✅ UI + actions Neon (marca entregada → cobranza) |
-| 13 | Embed / bridge **Administración de Bolsa** | ✅ URL configurable en Tesorería |
-| 14 | Módulos nav: Compras, Clientes, Entregas, Proyectos, Obra, Docs, Tesorería | ✅ |
+| 13 | **Bolsa nativa** (réplica Administración de Bolsa en Neon) | ✅ propias / general / asignadas / aprobación / préstamos |
+| 14 | Módulos nav: Compras, Clientes, Entregas, Proyectos, Obra, Docs, Bolsa | ✅ |
 | 15 | Seed equipo Laura / Fernando / Itza / Nesim | ✅ |
-| 16 | Análisis bases licitación (cumplimos / no) | ⬜ tras explicar muestras reales |
+| 16 | YLIKA Bot pendientes por rol | ✅ |
+| 17 | UI simplificada (orbs flotantes, menos texto) | ✅ |
+| 18 | Análisis bases licitación (cumplimos / no) | ⬜ tras explicar muestras reales |
 
 ---
 

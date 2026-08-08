@@ -19,7 +19,6 @@ export default async function ComprasPage() {
   return (
     <AppShell
       title="Compras"
-      subtitle="Proveedores y cotizaciones P1/P2/P3 ligadas a expedientes. El comparativo vive en cada expediente."
     >
       <Glass className="mb-4 p-5">
         <h2 className="display text-lg font-semibold">Alta de proveedor</h2>

@@ -12,7 +12,6 @@ export default async function ProyectosPage() {
   return (
     <AppShell
       title="Proyectos privados"
-      subtitle="Expedientes de sector PRIVADO leídos desde Neon (sin datos inventados)."
     >
       <Glass className="overflow-hidden">
         <table className="w-full text-left text-sm">
