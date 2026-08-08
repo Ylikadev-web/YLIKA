@@ -1,7 +1,9 @@
 # YLIKA Platform — Plan Maestro (ERP / BOS / CRM)
 
 > Documento de planificación. **No incluye código de aplicación.**  
-> Versión: 1.0 · Agosto 2026
+> Versión: 1.0 · Agosto 2026  
+> **Propuesta A** (servidor Linux + Cloudflare Tunnel).  
+> Alternativa full cloud: [`PLAN-YLIKA-CLOUD.md`](./PLAN-YLIKA-CLOUD.md) — este archivo no se modifica por esa ruta.
 
 ---
 
