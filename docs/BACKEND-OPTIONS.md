@@ -66,7 +66,9 @@ A veces el free tier bloquea por: proyectos pausados, límite de orgs, verificac
 
 ---
 
-## Decisión sugerida para YLIKA
+## Decisión tomada
 
-**Neon (Postgres) + Auth.js + R2 + Vercel.**  
-PC apagado = OK. Mismo flujo Laura→Itza→Nesim. Cuando digas “vamos con Neon”, adapto Auth/RLS y dejamos de depender de crear proyecto en Supabase.
+**Neon (Postgres) + Auth.js + Vercel Blob/local + Vercel** — ya cableado en `web/`.
+
+Sigue la guía: [`SETUP-NEON.md`](./SETUP-NEON.md).  
+Solo falta que pegues `DATABASE_URL` de Neon y corras `npm run db:push && npm run db:seed`.
