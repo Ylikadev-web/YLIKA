@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { Plus, Sparkles } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
@@ -10,21 +11,24 @@ import { GlassModal } from "@/components/ui/glass-modal";
 const TASKS = [
   {
     code: "YLK-MONE-2026-00041",
-    title: "Junta de aclaraciones · IMSS",
-    meta: "Hoy 12:00 · Licitación pública",
+    title: "Comparativo · 3 proveedores listos",
+    meta: "Comercial · elegir P1/P2 y generar cot. final",
     tone: "accent" as const,
+    href: "/app/comercial/exp-1",
   },
   {
-    code: "YLK-DAKAM-2026-00012",
-    title: "Asignar responsable de obra",
-    meta: "Proyecto privado · sin dueño técnico",
+    code: "YLK-MONE-2026-00042",
+    title: "Laura · revisión de requisitos",
+    meta: "1 documento por vencer · pendiente luz verde",
     tone: "warn" as const,
+    href: "/app/licitaciones",
   },
   {
     code: "YLK-NARAMO-2026-00007",
-    title: "Comparar cotizaciones partidas 4–9",
-    meta: "3 proveedores · falta % nacional",
+    title: "Itza · propuesta Admin/Finanzas",
+    meta: "Proyecto privado en etapa propuesta",
     tone: "muted" as const,
+    href: "/app/comercial/exp-3",
   },
 ];
 
@@ -59,9 +63,8 @@ export default function HomePage() {
           <ul className="space-y-3">
             {TASKS.map((task) => (
               <li key={task.code}>
-                <button
-                  type="button"
-                  onClick={() => setOpen(true)}
+                <Link
+                  href={task.href}
                   className="glass-thin group flex w-full items-start gap-3 rounded-2xl px-4 py-3 text-left transition hover:ring-1 hover:ring-[var(--glass-border)]"
                 >
                   <span
@@ -86,7 +89,7 @@ export default function HomePage() {
                       {task.meta}
                     </span>
                   </span>
-                </button>
+                </Link>
               </li>
             ))}
           </ul>

@@ -2,19 +2,28 @@
 
 Plataforma ERP / BOS / CRM del grupo **YLIKA** (MONE · DAKAM · NARAMO).
 
+## Progress
+
+```
+████████░░░░░░░░░░░░  ~40%  Fundación + workflow + UI expediente demo
+```
+
+Detalle vivo: [`docs/PROGRESS.md`](docs/PROGRESS.md)
+
 ## Desarrollo activo — Full Cloud
 
 | Pieza | Ahora | Luego |
 |-------|--------|--------|
-| App | `web/` Next.js | Deploy Vercel |
-| Datos | — | Supabase (Postgres + Auth + Storage) |
-| Links temporales | **Cloudflare Tunnel** (`*.trycloudflare.com`) | Dominio propio / Vercel |
-| UI | Glass iOS-like + temas | Preferencias en perfil |
+| App | `web/` Next.js (glass UI + pipeline) | Deploy Vercel |
+| Datos | Migraciones en `supabase/migrations` | Proyecto Supabase + Auth |
+| Links temporales | **Cloudflare Tunnel** | Dominio propio / Vercel |
+| Bolsa | Plan bridge | Embed `Administraci-n-de-Bolsa` |
 
 ### Arranque local
 
 ```bash
 cd web
+cp .env.example .env.local   # pegar keys Supabase cuando las tengas
 npm install
 npm run dev
 ```
@@ -22,11 +31,10 @@ npm run dev
 ### Link temporal con Cloudflare (sin usar tus dominios)
 
 ```bash
-# con el dev server corriendo en :3000
 cloudflared tunnel --url http://localhost:3000
 ```
 
-Detalle: [`docs/DEV-CLOUD.md`](docs/DEV-CLOUD.md)
+Detalle: [`docs/DEV-CLOUD.md`](docs/DEV-CLOUD.md) · Parsing: [`docs/PARSING-STRATEGY.md`](docs/PARSING-STRATEGY.md)
 
 ### Dirección visual
 

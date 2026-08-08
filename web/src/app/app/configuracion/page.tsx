@@ -2,7 +2,8 @@
 
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
-import { Check, Palette } from "lucide-react";
+import Link from "next/link";
+import { Check, GitBranch, Palette, Wallet } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Glass } from "@/components/ui/glass";
 import { THEMES, type ThemeId } from "@/lib/themes";
@@ -114,6 +115,34 @@ export default function ConfiguracionPage() {
             })}
           </div>
         </Glass>
+
+        <div className="mb-4 grid gap-3 sm:grid-cols-2">
+          <Link href="/app/configuracion/workflow">
+            <Glass className="flex h-full items-start gap-3 p-5 transition hover:ring-1 hover:ring-[var(--glass-border)]">
+              <GitBranch className="mt-0.5 h-5 w-5 text-[var(--accent)]" />
+              <div>
+                <h3 className="display text-base font-semibold">
+                  Workflow y roles
+                </h3>
+                <p className="mt-1 text-sm text-[var(--text-muted)]">
+                  Quién recibe cada etapa (solo ADMIN_SISTEMAS).
+                </p>
+              </div>
+            </Glass>
+          </Link>
+          <Glass className="flex items-start gap-3 p-5 opacity-90">
+            <Wallet className="mt-0.5 h-5 w-5 text-[var(--accent-2)]" />
+            <div>
+              <h3 className="display text-base font-semibold">
+                Módulo Bolsa
+              </h3>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">
+                Bridge a Administración de Bolsa — URL/embed configurable tras
+                conectar Supabase.
+              </p>
+            </div>
+          </Glass>
+        </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
           <Glass className="p-6">
