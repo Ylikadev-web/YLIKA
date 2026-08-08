@@ -5,7 +5,7 @@
 ## Progress bar
 
 ```
-██████████░░░░░░░░░░  ~50%  Neon/Auth cableado · falta pegar DATABASE_URL
+████████████░░░░░░░░  ~55%  Neon conectado · tablas + seed OK
 ```
 
 | # | Entregable | Estado |
@@ -16,7 +16,7 @@
 | 4 | Workflow editable + roles | ✅ |
 | 5 | Pipeline Comercial + comparativo iluminado | ✅ UI demo |
 | 6 | Parser Excel determinista | ✅ |
-| 7 | **Neon + Auth.js + Blob/local storage** | ✅ código · ⬜ tu `DATABASE_URL` ([SETUP-NEON.md](./SETUP-NEON.md)) |
+| 7 | **Neon + Auth.js + Blob/local storage** | ✅ conectado · schema + seed aplicados |
 | 8 | Vercel deploy + Tunnel/dominio | ⬜ |
 | 9 | Módulo Laura: docs empresa + caducidad + checklist requisitos | ⬜ UI parcial → conectar Storage |
 | 10 | Parse PDF/Word/imagen (Document AI / Textract) + confirmación humana | ⬜ |
