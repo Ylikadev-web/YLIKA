@@ -5,27 +5,32 @@ Plataforma ERP / BOS / CRM del grupo **YLIKA** (MONE · DAKAM · NARAMO).
 ## Progress
 
 ```
-████████░░░░░░░░░░░░  ~40%  Fundación + workflow + UI expediente demo
+██████████░░░░░░░░░░  ~50%  Neon/Auth listos · falta tu DATABASE_URL
 ```
 
-Detalle vivo: [`docs/PROGRESS.md`](docs/PROGRESS.md)
+Detalle: [`docs/PROGRESS.md`](docs/PROGRESS.md) · Setup: [`docs/SETUP-NEON.md`](docs/SETUP-NEON.md)
 
-## Desarrollo activo — Full Cloud
+## Stack activo
 
-| Pieza | Ahora | Luego |
-|-------|--------|--------|
-| App | `web/` Next.js (glass UI + pipeline) | Deploy Vercel |
-| Datos | Migraciones en `supabase/migrations` | Proyecto Supabase + Auth |
-| Links temporales | **Cloudflare Tunnel** | Dominio propio / Vercel |
-| Bolsa | Plan bridge | Embed `Administraci-n-de-Bolsa` |
+| Pieza | Tecnología |
+|-------|------------|
+| App | Next.js en `web/` |
+| DB | **Neon Postgres** (Drizzle ORM) |
+| Auth | **Auth.js** (credenciales + JWT) |
+| Archivos | Vercel Blob o `uploads/` local |
+| Deploy | Vercel (+ Cloudflare Tunnel para demos) |
 
 ### Arranque local
 
 ```bash
 cd web
-cp .env.example .env.local   # pegar keys Supabase cuando las tengas
+cp .env.example .env.local
+# pega DATABASE_URL de Neon + AUTH_SECRET
 npm install
+npm run db:push
+npm run db:seed
 npm run dev
+# login: miguel@ylika.local / ylika-admin
 ```
 
 ### Link temporal con Cloudflare (sin usar tus dominios)

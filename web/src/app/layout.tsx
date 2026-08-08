@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Sora } from "next/font/google";
+import { AuthSessionProvider } from "@/components/providers/session-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
 import "./globals.css";
 
@@ -31,7 +32,9 @@ export default function RootLayout({
       <body
         className={`${display.variable} ${body.variable} min-h-full antialiased`}
       >
-        <ThemeProvider>{children}</ThemeProvider>
+        <AuthSessionProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </AuthSessionProvider>
       </body>
     </html>
   );

@@ -5,18 +5,18 @@
 ## Progress bar
 
 ```
-████████░░░░░░░░░░░░  ~40%  Fundación + workflow modelado
+██████████░░░░░░░░░░  ~50%  Neon/Auth cableado · falta pegar DATABASE_URL
 ```
 
 | # | Entregable | Estado |
 |---|------------|--------|
 | 1 | Plan A/B + PDF visual | ✅ |
 | 2 | UI glass iOS + temas | ✅ |
-| 3 | Schema Supabase (expediente, partidas, cotizaciones, remisiones, docs empresa) | ✅ migraciones |
-| 4 | Workflow editable + roles (Laura, Miguel×2, Itza, Nesim, Fernando) | ✅ migraciones + UI admin |
-| 5 | Pipeline Comercial + expediente demo (comparativo iluminado, markup, P1/P2) | ✅ UI demo |
-| 6 | Parser Excel determinista (lista limpia / cotizaciones) | ✅ lib |
-| 7 | Backend cloud (Supabase atorado → ver alternativas Neon) | ⬜ ver [`BACKEND-OPTIONS.md`](./BACKEND-OPTIONS.md) |
+| 3 | Schema Postgres (Drizzle) expediente/cotizaciones/remisiones/workflow | ✅ |
+| 4 | Workflow editable + roles | ✅ |
+| 5 | Pipeline Comercial + comparativo iluminado | ✅ UI demo |
+| 6 | Parser Excel determinista | ✅ |
+| 7 | **Neon + Auth.js + Blob/local storage** | ✅ código · ⬜ tu `DATABASE_URL` ([SETUP-NEON.md](./SETUP-NEON.md)) |
 | 8 | Vercel deploy + Tunnel/dominio | ⬜ |
 | 9 | Módulo Laura: docs empresa + caducidad + checklist requisitos | ⬜ UI parcial → conectar Storage |
 | 10 | Parse PDF/Word/imagen (Document AI / Textract) + confirmación humana | ⬜ |

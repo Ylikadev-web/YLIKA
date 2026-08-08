@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS } from "@/components/nav/nav-items";
+import { UserMenu } from "@/components/nav/user-menu";
 import { cn } from "@/lib/utils";
 
 export function Sidebar() {
@@ -68,14 +69,17 @@ export function Sidebar() {
         })}
       </nav>
 
-      <div className="glass-thin mt-auto rounded-2xl px-3 py-3">
-        <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
-          Empresa activa
-        </p>
-        <p className="mt-1 text-sm font-medium">MONE</p>
-        <p className="text-xs text-[var(--text-muted)]">
-          Distribuidora de Materiales
-        </p>
+      <div className="mt-auto space-y-2 px-1">
+        <div className="glass-thin rounded-2xl px-3 py-3">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            Empresa activa
+          </p>
+          <p className="mt-1 text-sm font-medium">MONE</p>
+          <p className="text-xs text-[var(--text-muted)]">
+            Distribuidora de Materiales
+          </p>
+        </div>
+        <UserMenu />
       </div>
     </aside>
   );

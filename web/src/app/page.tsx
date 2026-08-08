@@ -31,7 +31,7 @@ export default function LandingPage() {
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/app"
+              href="/login"
               className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-2)] px-5 text-sm font-semibold text-[#111] shadow-[0_12px_40px_color-mix(in_srgb,var(--accent-2)_35%,transparent)] transition hover:brightness-110"
             >
               Entrar al workspace
