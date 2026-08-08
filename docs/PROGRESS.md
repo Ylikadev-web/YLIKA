@@ -5,7 +5,7 @@
 ## Progress bar
 
 ```
-██████████████░░░░░░  ~65%  Expedientes reales en Neon (sin UI demo)
+███████████████░░░░░  ~70%  Vercel producción online
 ```
 
 | # | Entregable | Estado |
@@ -17,7 +17,7 @@
 | 5 | Pipeline Comercial + comparativo iluminado | ✅ **persistente Neon** |
 | 6 | Parser Excel determinista | ✅ |
 | 7 | **Neon + Auth.js + Blob/local storage** | ✅ conectado · schema + seed aplicados |
-| 8 | Vercel deploy + Tunnel/dominio | ⬜ |
+| 8 | Vercel deploy + Tunnel/dominio | ✅ https://ylika-ops.vercel.app |
 | 9 | Módulo Laura: docs empresa + caducidad + luz verde | ✅ DB + UI (falta upload Storage) |
 | 10 | Parse PDF/Word/imagen (Document AI / Textract) + confirmación humana | ⬜ |
 | 11 | Generar PDF cotización final (sin mostrar %) | ⬜ |
