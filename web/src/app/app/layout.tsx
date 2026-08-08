@@ -1,11 +1,20 @@
 import type { ReactNode } from "react";
-import { YlikaBotHost } from "@/components/bot/ylika-bot-host";
+import { auth } from "@/lib/auth/config";
+import { listPendientesForRoles } from "@/lib/db/pendientes";
+import { PendientesProvider } from "@/components/providers/pendientes-provider";
+import { YlikaBot } from "@/components/bot/ylika-bot";
 
-export default function AppAreaLayout({ children }: { children: ReactNode }) {
+export default async function AppAreaLayout({ children }: { children: ReactNode }) {
+  const session = await auth();
+  const roles = (session?.user as { roles?: string[] } | undefined)?.roles ?? [];
+  const items = session?.user ? await listPendientesForRoles(roles) : [];
+
   return (
-    <>
+    <PendientesProvider items={items}>
       {children}
-      <YlikaBotHost />
-    </>
+      {session?.user ? (
+        <YlikaBot items={items} userName={session.user.name} />
+      ) : null}
+    </PendientesProvider>
   );
 }

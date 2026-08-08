@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Manrope, Sora } from "next/font/google";
 import { AuthSessionProvider } from "@/components/providers/session-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { UiPrefsProvider } from "@/components/providers/ui-prefs-provider";
 import "./globals.css";
 
 const display = Sora({
@@ -33,7 +34,9 @@ export default function RootLayout({
         className={`${display.variable} ${body.variable} min-h-full antialiased`}
       >
         <AuthSessionProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <UiPrefsProvider>{children}</UiPrefsProvider>
+          </ThemeProvider>
         </AuthSessionProvider>
       </body>
     </html>

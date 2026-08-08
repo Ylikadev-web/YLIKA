@@ -213,35 +213,115 @@ body {
     inset 0 1px 0 var(--glass-highlight);
 }
 
-/* Glass material */
+/* Glass material — blur levels via data-glass-blur on <html> */
+:root,
+[data-glass-blur="strong"] {
+  --blur-glass: 36px;
+  --blur-strong: 52px;
+  --blur-thin: 24px;
+  --blur-scrim: 28px;
+}
+
+[data-glass-blur="soft"] {
+  --blur-glass: 22px;
+  --blur-strong: 32px;
+  --blur-thin: 14px;
+  --blur-scrim: 16px;
+}
+
+[data-glass-blur="max"] {
+  --blur-glass: 48px;
+  --blur-strong: 72px;
+  --blur-thin: 32px;
+  --blur-scrim: 40px;
+}
+
 .glass {
   background: var(--glass);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow), inset 0 1px 0 var(--glass-highlight);
-  backdrop-filter: blur(28px) saturate(160%);
-  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  backdrop-filter: blur(var(--blur-glass)) saturate(170%);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(170%);
 }
 
 .glass-strong {
   background: var(--glass-strong);
   border: 1px solid var(--glass-border);
   box-shadow: var(--shadow), inset 0 1px 0 var(--glass-highlight);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  backdrop-filter: blur(var(--blur-strong)) saturate(190%);
+  -webkit-backdrop-filter: blur(var(--blur-strong)) saturate(190%);
 }
 
 .glass-thin {
   background: color-mix(in srgb, var(--glass) 70%, transparent);
   border: 1px solid var(--glass-border);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(var(--blur-thin)) saturate(150%);
+  -webkit-backdrop-filter: blur(var(--blur-thin)) saturate(150%);
 }
 
-/* Modal dimming with vibrancy */
+/* Modal scrim: heavier blur so background doesn't confuse */
 .glass-scrim {
-  background: color-mix(in srgb, var(--bg) 45%, transparent);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  backdrop-filter: blur(var(--blur-scrim)) saturate(160%);
+  -webkit-backdrop-filter: blur(var(--blur-scrim)) saturate(160%);
+}
+
+/* Reduce transparency (accessibility / clarity) */
+[data-reduce-transparency="on"] .glass,
+[data-reduce-transparency="on"] .glass-strong,
+[data-reduce-transparency="on"] .glass-thin {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+[data-reduce-transparency="on"] .glass {
+  background: var(--bg-elevated);
+}
+
+[data-reduce-transparency="on"] .glass-strong {
+  background: var(--bg-elevated);
+  opacity: 1;
+}
+
+[data-reduce-transparency="on"] .glass-scrim {
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+[data-float-orbs="off"] .float-orbs {
+  display: none;
+}
+
+/* Pending backlight — synced with bot pendientes */
+.pending-glow-ring {
+  border-radius: inherit;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent-2) 55%, transparent),
+    0 0 18px color-mix(in srgb, var(--accent-2) 45%, transparent),
+    0 0 36px color-mix(in srgb, var(--accent) 25%, transparent);
+  animation: pending-pulse 2.2s ease-in-out infinite;
+}
+
+.nav-pending {
+  position: relative;
+}
+
+[data-pending-glow="off"] .pending-glow-ring {
+  display: none;
+  animation: none;
+}
+
+@keyframes pending-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
 }
 
 .display {

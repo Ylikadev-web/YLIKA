@@ -67,7 +67,7 @@ export function GlassModal({
             aria-modal="true"
             aria-labelledby="glass-modal-title"
             className={cn(
-              "glass-strong relative z-10 w-full overflow-hidden rounded-[28px]",
+              "glass-strong relative z-10 w-full overflow-hidden rounded-[28px] shadow-[0_30px_100px_rgba(0,0,0,0.55)]",
               wide ? "max-w-3xl" : "max-w-lg",
               className,
             )}

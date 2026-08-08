@@ -70,15 +70,19 @@ export function YlikaBot({
                     <Link
                       href={item.href}
                       onClick={() => startTransition(() => setOpen(false))}
-                      className="flex items-start gap-3 rounded-2xl px-3 py-2.5 transition hover:bg-[color-mix(in_srgb,var(--text)_6%,transparent)]"
+                      className="nav-pending relative flex items-start gap-3 rounded-2xl px-3 py-2.5 transition hover:bg-[color-mix(in_srgb,var(--text)_6%,transparent)]"
                     >
                       <span
+                        aria-hidden
+                        className="pending-glow-ring pointer-events-none absolute inset-0 rounded-2xl"
+                      />
+                      <span
                         className={cn(
-                          "mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
+                          "relative z-[1] mt-1 h-2.5 w-2.5 shrink-0 rounded-full",
                           TONE[item.tone],
                         )}
                       />
-                      <span className="min-w-0">
+                      <span className="relative z-[1] min-w-0">
                         <span className="block truncate text-sm font-medium">
                           {item.title}
                         </span>
