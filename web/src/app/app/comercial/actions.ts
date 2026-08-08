@@ -547,3 +547,234 @@ export async function noParticipamosAction(expedienteId: string) {
     "No participamos — requisitos / decisión Laura",
   );
 }
+
+export async function importListaLimpiaExcelAction(formData: FormData) {
+  try {
+    const expedienteId = String(formData.get("expedienteId") || "");
+    const file = formData.get("file");
+    if (!expedienteId || !(file instanceof File) || file.size === 0) {
+      return { ok: false as const, error: "Archivo o expediente faltante" };
+    }
+    const { parseExcelPartidas } = await import("@/lib/parsing/excel-partidas");
+    const { storeFile } = await import("@/lib/storage");
+    const buffer = await file.arrayBuffer();
+    const { rows } = parseExcelPartidas(buffer);
+    if (!rows.length) {
+      return { ok: false as const, error: "No se detectaron partidas en el Excel" };
+    }
+
+    await replacePartidasAction(
+      expedienteId,
+      rows.map((r, i) => ({
+        numero: r.numero ?? i + 1,
+        descripcion: r.descripcion,
+        cantidad: r.cantidad,
+        unidad: r.unidad,
+        marca: r.marca,
+      })),
+    );
+
+    const stored = await storeFile(file, {
+      folder: `expedientes/${expedienteId}`,
+      filename: file.name,
+      contentType: file.type || undefined,
+    });
+    const user = await requireUser();
+    const db = getDb();
+    const userId =
+      user.id === "demo-miguel"
+        ? (
+            await db
+              .select({ id: s.users.id })
+              .from(s.users)
+              .where(eq(s.users.email, "miguel@ylika.local"))
+              .limit(1)
+          )[0]?.id
+        : user.id;
+    const [exp] = await db
+      .select({ empresaId: s.expedientes.empresaId })
+      .from(s.expedientes)
+      .where(eq(s.expedientes.id, expedienteId))
+      .limit(1);
+    await db.insert(s.documentos).values({
+      expedienteId,
+      empresaId: exp?.empresaId ?? null,
+      tipo: "LISTA_LIMPIA",
+      nombre: file.name,
+      storagePath: stored.path,
+      mimeType: file.type || null,
+      uploadedBy: userId ?? null,
+    });
+    await logBitacora(
+      expedienteId,
+      userId,
+      `Lista limpia importada (${rows.length} partidas)`,
+      undefined,
+      "EN_COTIZACION",
+      { file: stored.path, rows: rows.length },
+    );
+
+    revalidatePath(`/app/comercial/${expedienteId}`);
+    revalidatePath("/app/documentos");
+    return {
+      ok: true as const,
+      message: `${rows.length} partidas cargadas desde Excel`,
+    };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "Error al importar",
+    };
+  }
+}
+
+export async function importCotizacionExcelAction(formData: FormData) {
+  try {
+    const expedienteId = String(formData.get("expedienteId") || "");
+    const alias = String(formData.get("alias") || "P1").trim() || "P1";
+    const proveedorNombre =
+      String(formData.get("proveedorNombre") || "").trim() || `Proveedor ${alias}`;
+    const incluyeIva = formData.get("incluyeIva") === "1";
+    const file = formData.get("file");
+    if (!expedienteId || !(file instanceof File) || file.size === 0) {
+      return { ok: false as const, error: "Archivo o expediente faltante" };
+    }
+
+    const db = getDb();
+    const partidas = await db
+      .select({
+        id: s.partidas.id,
+        numero: s.partidas.numero,
+        descripcion: s.partidas.descripcion,
+      })
+      .from(s.partidas)
+      .where(eq(s.partidas.expedienteId, expedienteId))
+      .orderBy(asc(s.partidas.numero));
+
+    if (!partidas.length) {
+      return {
+        ok: false as const,
+        error: "Primero carga la lista limpia (partidas)",
+      };
+    }
+
+    const { parseExcelPartidas, matchPartidas } = await import(
+      "@/lib/parsing/excel-partidas"
+    );
+    const { storeFile } = await import("@/lib/storage");
+    const buffer = await file.arrayBuffer();
+    const { rows } = parseExcelPartidas(buffer);
+    if (!rows.length) {
+      return { ok: false as const, error: "Excel sin filas útiles" };
+    }
+
+    const matched = matchPartidas(partidas, rows);
+    const lineas = matched
+      .filter((m) => m.partidaId && m.row.precio != null)
+      .map((m) => ({
+        partidaId: m.partidaId!,
+        precio: m.row.precio!,
+        entregaDias: m.row.entregaDias,
+        marca: m.row.marca,
+      }));
+
+    if (!lineas.length) {
+      return {
+        ok: false as const,
+        error: "No hubo matches con precio. Revisa columnas Descripción/Precio.",
+      };
+    }
+
+    await upsertProveedorCotizacionAction({
+      expedienteId,
+      proveedorNombre,
+      alias,
+      incluyeIva,
+      lineas,
+    });
+
+    // Persist match confidence from parser
+    const [cot] = await db
+      .select()
+      .from(s.cotizacionesProveedor)
+      .where(
+        and(
+          eq(s.cotizacionesProveedor.expedienteId, expedienteId),
+          eq(s.cotizacionesProveedor.aliasEnExpediente, alias),
+        ),
+      )
+      .limit(1);
+    if (cot) {
+      for (const m of matched) {
+        if (!m.partidaId || m.row.precio == null) continue;
+        await db
+          .update(s.cotizacionPartidas)
+          .set({
+            matchConfidence: String(m.confidence),
+            matchManual: m.confidence < 0.55,
+            descripcionOfertada: m.row.descripcion,
+          })
+          .where(
+            and(
+              eq(s.cotizacionPartidas.cotizacionId, cot.id),
+              eq(s.cotizacionPartidas.partidaId, m.partidaId),
+            ),
+          );
+      }
+      await db
+        .update(s.cotizacionesProveedor)
+        .set({
+          archivoPath: (
+            await storeFile(file, {
+              folder: `expedientes/${expedienteId}/cotizaciones`,
+              filename: `${alias}-${file.name}`,
+              contentType: file.type || undefined,
+            })
+          ).path,
+          parseStatus: "PARSED",
+          parseMeta: {
+            matched: lineas.length,
+            totalRows: rows.length,
+            needsReview: matched.filter((m) => m.confidence < 0.55).length,
+          },
+        })
+        .where(eq(s.cotizacionesProveedor.id, cot.id));
+    }
+
+    await db
+      .update(s.expedientes)
+      .set({ estatus: "COMPARATIVO", updatedAt: new Date() })
+      .where(eq(s.expedientes.id, expedienteId));
+
+    const user = await requireUser();
+    const userId =
+      user.id === "demo-miguel"
+        ? (
+            await db
+              .select({ id: s.users.id })
+              .from(s.users)
+              .where(eq(s.users.email, "miguel@ylika.local"))
+              .limit(1)
+          )[0]?.id
+        : user.id;
+    await logBitacora(
+      expedienteId,
+      userId,
+      `Cotización ${alias} importada (${lineas.length} líneas)`,
+      "EN_COTIZACION",
+      "COMPARATIVO",
+    );
+
+    revalidatePath(`/app/comercial/${expedienteId}`);
+    revalidatePath("/app/compras");
+    return {
+      ok: true as const,
+      message: `${alias}: ${lineas.length}/${rows.length} líneas emparejadas`,
+    };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "Error al importar cotización",
+    };
+  }
+}

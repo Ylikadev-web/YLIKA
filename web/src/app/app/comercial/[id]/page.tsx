@@ -4,6 +4,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
 import { ComparativoClient } from "@/app/app/comercial/[id]/comparativo-client";
+import { ExcelImportPanel } from "@/components/comercial/excel-import";
 import { getExpedienteById } from "@/lib/db/queries";
 import { ESTATUS_LABEL, type EstatusExpediente } from "@/lib/domain/workflow";
 import type { SelectionMode } from "@/lib/quotes/comparativo";
@@ -19,13 +20,19 @@ export default async function ExpedientePage({
   const exp = await getExpedienteById(id);
   if (!exp) notFound();
 
+  const usedAliases = new Set(exp.cotizaciones.map((c) => c.alias));
+  const nextAlias =
+    ["P1", "P2", "P3", "P4", "P5"].find((a) => !usedAliases.has(a)) ?? "P1";
+
   return (
     <AppShell
       title={exp.codigo}
-      subtitle={`${exp.titulo} · ${ESTATUS_LABEL[exp.estatus as EstatusExpediente] ?? exp.estatus} · ${exp.responsableNombre ?? "—"}`}
+      subtitle={`${ESTATUS_LABEL[exp.estatus as EstatusExpediente] ?? exp.estatus}`}
       actions={
         <Link href="/app/comercial">
-          <Button variant="ghost">Pipeline</Button>
+          <Button variant="ghost" size="sm">
+            Pipeline
+          </Button>
         </Link>
       }
     >
@@ -36,7 +43,7 @@ export default async function ExpedientePage({
           ["Tipo", exp.tipoNombre],
           ["Cliente", exp.clienteNombre ?? "—"],
         ].map(([k, v]) => (
-          <Glass key={k} className="px-4 py-3">
+          <Glass key={k} className="float-card px-4 py-3">
             <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
               {k}
             </p>
@@ -44,6 +51,8 @@ export default async function ExpedientePage({
           </Glass>
         ))}
       </div>
+
+      <ExcelImportPanel expedienteId={exp.id} nextAlias={nextAlias} />
 
       <ComparativoClient
         expedienteId={exp.id}
