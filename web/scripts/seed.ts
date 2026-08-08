@@ -104,6 +104,13 @@ async function main() {
       orden: 30,
     },
     {
+      sector: "GOBIERNO" as const,
+      ambito: "OBRA" as const,
+      codigo: "OBRA_PUBLICA",
+      nombre: "Obra pública",
+      orden: 40,
+    },
+    {
       sector: "PRIVADO" as const,
       ambito: "PRIVADO" as const,
       codigo: "PROYECTO",
@@ -196,9 +203,80 @@ async function main() {
     });
   }
 
+  const team = [
+    {
+      name: "Laura",
+      email: "laura@ylika.local",
+      roles: ["LICITACIONES", "COMPRAS_VENTAS"],
+    },
+    {
+      name: "Fernando",
+      email: "fernando@ylika.local",
+      roles: ["COMPRAS_VENTAS"],
+    },
+    {
+      name: "Itza",
+      email: "itza@ylika.local",
+      roles: ["ADMIN_FINANZAS"],
+    },
+    {
+      name: "Nesim",
+      email: "nesim@ylika.local",
+      roles: ["DIRECTOR"],
+    },
+  ];
+
+  for (const member of team) {
+    let [user] = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, member.email))
+      .limit(1);
+    if (!user) {
+      const inserted = await db
+        .insert(schema.users)
+        .values({
+          name: member.name,
+          email: member.email,
+          passwordHash: hash,
+        })
+        .returning();
+      user = inserted[0];
+    } else if (!user.passwordHash) {
+      await db
+        .update(schema.users)
+        .set({ passwordHash: hash })
+        .where(eq(schema.users.id, user.id));
+    }
+
+    const existingRoles = await db
+      .select()
+      .from(schema.usuarioRoles)
+      .where(eq(schema.usuarioRoles.userId, user.id));
+
+    for (const rolCodigo of member.roles) {
+      const rol = allRoles.find((r) => r.codigo === rolCodigo);
+      if (!rol) continue;
+      if (!existingRoles.some((x) => x.rolId === rol.id)) {
+        await db.insert(schema.usuarioRoles).values({
+          userId: user.id,
+          rolId: rol.id,
+        });
+      }
+    }
+
+    for (const emp of allEmpresas) {
+      await db
+        .insert(schema.usuarioEmpresas)
+        .values({ userId: user.id, empresaId: emp.id })
+        .onConflictDoNothing();
+    }
+  }
+
   console.log("✅ Seed OK");
   console.log(`   Admin: ${email}`);
   console.log(`   Password: ${password}`);
+  console.log(`   Equipo: Laura, Fernando, Itza, Nesim (misma password)`);
   console.log(`   Empresas: ${allEmpresas.map((e) => e.codigo).join(", ")}`);
 }
 

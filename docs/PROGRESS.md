@@ -5,7 +5,7 @@
 ## Progress bar
 
 ```
-███████████████░░░░░  ~70%  Vercel producción online
+█████████████████░░░  ~82%  Todos los módulos nav con UI real Neon
 ```
 
 | # | Entregable | Estado |
@@ -21,9 +21,11 @@
 | 9 | Módulo Laura: docs empresa + caducidad + luz verde | ✅ DB + UI (falta upload Storage) |
 | 10 | Parse PDF/Word/imagen (Document AI / Textract) + confirmación humana | ⬜ |
 | 11 | Generar PDF cotización final (sin mostrar %) | ⬜ |
-| 12 | Remisiones + folio + handoff Itza | ⬜ |
-| 13 | Embed / bridge **Administración de Bolsa** | ⬜ plan listo |
-| 14 | Análisis bases licitación (cumplimos / no) | ⬜ tras explicar muestras reales |
+| 12 | Remisiones + folio + handoff Itza | ✅ UI + actions Neon (marca entregada → cobranza) |
+| 13 | Embed / bridge **Administración de Bolsa** | ✅ URL configurable en Tesorería |
+| 14 | Módulos nav: Compras, Clientes, Entregas, Proyectos, Obra, Docs, Tesorería | ✅ |
+| 15 | Seed equipo Laura / Fernando / Itza / Nesim | ✅ |
+| 16 | Análisis bases licitación (cumplimos / no) | ⬜ tras explicar muestras reales |
 
 ---
 
