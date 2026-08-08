@@ -18,7 +18,7 @@
 | 6 | Parser Excel determinista | ✅ |
 | 7 | **Neon + Auth.js + Blob/local storage** | ✅ conectado · schema + seed aplicados |
 | 8 | Vercel deploy + Tunnel/dominio | ⬜ |
-| 9 | Módulo Laura: docs empresa + caducidad + checklist requisitos | ⬜ UI parcial → conectar Storage |
+| 9 | Módulo Laura: docs empresa + caducidad + luz verde | ✅ DB + UI (falta upload Storage) |
 | 10 | Parse PDF/Word/imagen (Document AI / Textract) + confirmación humana | ⬜ |
 | 11 | Generar PDF cotización final (sin mostrar %) | ⬜ |
 | 12 | Remisiones + folio + handoff Itza | ⬜ |
