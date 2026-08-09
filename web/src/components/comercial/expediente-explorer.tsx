@@ -7,17 +7,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  EXPEDIENTE_TAB_IDS,
+  isExpedienteTabId,
+  type ExpedienteTabId,
+} from "@/lib/domain/expediente-utils";
 import { cn } from "@/lib/utils";
 
-export type ExpedienteTabId =
-  | "resumen"
-  | "checklist"
-  | "edicion"
-  | "importar"
-  | "relaciones"
-  | "comparativo"
-  | "historial";
+export type { ExpedienteTabId };
 
 export type ExpedienteTab = {
   id: ExpedienteTabId;
@@ -27,15 +24,19 @@ export type ExpedienteTab = {
   hidden?: boolean;
 };
 
-const TAB_IDS: ExpedienteTabId[] = [
-  "resumen",
-  "checklist",
-  "edicion",
-  "importar",
-  "relaciones",
-  "comparativo",
-  "historial",
-];
+function readTabFromLocation(): ExpedienteTabId | null {
+  if (typeof window === "undefined") return null;
+  const v = new URLSearchParams(window.location.search).get("tab");
+  return isExpedienteTabId(v) ? v : null;
+}
+
+function writeTabToLocation(id: ExpedienteTabId) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  url.searchParams.set("tab", id);
+  // Evita remount RSC/Suspense de router.replace — solo actualiza la URL
+  window.history.replaceState(window.history.state, "", url.toString());
+}
 
 export function ExpedienteExplorer({
   tabs,
@@ -46,47 +47,45 @@ export function ExpedienteExplorer({
   panels: Partial<Record<ExpedienteTabId, ReactNode>>;
   defaultTab?: ExpedienteTabId;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const visible = useMemo(
-    () => tabs.filter((t) => !t.hidden),
-    [tabs],
+  const visible = useMemo(() => tabs.filter((t) => !t.hidden), [tabs]);
+  const visibleIds = useMemo(() => visible.map((t) => t.id).join(","), [visible]);
+
+  const resolve = useCallback(
+    (candidate: ExpedienteTabId | null | undefined): ExpedienteTabId => {
+      const ids = visibleIds.split(",").filter(Boolean) as ExpedienteTabId[];
+      if (candidate && ids.includes(candidate)) return candidate;
+      if (ids.includes(defaultTab)) return defaultTab;
+      return (ids[0] as ExpedienteTabId) ?? "resumen";
+    },
+    [defaultTab, visibleIds],
   );
 
-  const fromUrl = searchParams.get("tab") as ExpedienteTabId | null;
-  const initial =
-    fromUrl && TAB_IDS.includes(fromUrl) && visible.some((t) => t.id === fromUrl)
-      ? fromUrl
-      : visible.some((t) => t.id === defaultTab)
-        ? defaultTab
-        : (visible[0]?.id ?? "resumen");
+  const [active, setActive] = useState<ExpedienteTabId>(() =>
+    resolve(readTabFromLocation() ?? defaultTab),
+  );
 
-  const [active, setActive] = useState<ExpedienteTabId>(initial);
-
+  // Sync si el usuario usa atrás/adelante del navegador
   useEffect(() => {
-    if (
-      fromUrl &&
-      TAB_IDS.includes(fromUrl) &&
-      visible.some((t) => t.id === fromUrl)
-    ) {
-      setActive(fromUrl);
-    }
-  }, [fromUrl, visible]);
+    const onPop = () => setActive(resolve(readTabFromLocation()));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [resolve]);
+
+  // Si cambia el set de tabs visibles (ej. aparece Checklist), corrige active
+  useEffect(() => {
+    setActive((prev) => resolve(prev));
+  }, [resolve]);
 
   const select = useCallback(
     (id: ExpedienteTabId) => {
       setActive(id);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("tab", id);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      writeTabToLocation(id);
     },
-    [pathname, router, searchParams],
+    [],
   );
 
   return (
     <div className="expediente-explorer">
-      {/* Barra tipo pestañas de navegador */}
       <div className="glass sticky top-2 z-20 mb-3 overflow-hidden rounded-[22px]">
         <div
           role="tablist"
@@ -101,6 +100,7 @@ export function ExpedienteExplorer({
                 type="button"
                 role="tab"
                 aria-selected={isActive}
+                aria-controls={`panel-${tab.id}`}
                 onClick={() => select(tab.id)}
                 className={cn(
                   "group relative flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-medium transition",
@@ -135,7 +135,6 @@ export function ExpedienteExplorer({
         </div>
       </div>
 
-      {/* Rail tipo explorador (desktop) + contenido */}
       <div className="grid gap-3 lg:grid-cols-[200px_minmax(0,1fr)]">
         <aside className="glass hidden h-fit rounded-[22px] p-2 lg:block">
           <p className="px-2.5 py-2 text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
@@ -168,11 +167,24 @@ export function ExpedienteExplorer({
           </nav>
         </aside>
 
-        <div
-          role="tabpanel"
-          className="min-w-0 [&_.float-card]:mb-0 [&_.mb-4]:mb-0"
-        >
-          {panels[active] ?? (
+        <div className="min-w-0 [&_.float-card]:mb-0 [&_.mb-4]:mb-0">
+          {EXPEDIENTE_TAB_IDS.map((id) => {
+            if (!panels[id]) return null;
+            if (!visible.some((t) => t.id === id)) return null;
+            const isActive = id === active;
+            return (
+              <div
+                key={id}
+                id={`panel-${id}`}
+                role="tabpanel"
+                hidden={!isActive}
+                className={cn(!isActive && "hidden")}
+              >
+                {panels[id]}
+              </div>
+            );
+          })}
+          {!panels[active] && (
             <div className="glass rounded-[28px] p-8 text-center text-sm text-[var(--text-muted)]">
               Apartado vacío
             </div>
@@ -181,33 +193,4 @@ export function ExpedienteExplorer({
       </div>
     </div>
   );
-}
-
-/** Default tab sugerido según fase del expediente */
-export function defaultTabForEstatus(estatus: string): ExpedienteTabId {
-  switch (estatus) {
-    case "REVISION_REQUISITOS":
-    case "APTO":
-    case "ORDEN_COTIZAR":
-      return "resumen";
-    case "EN_COTIZACION":
-      return "importar";
-    case "COMPARATIVO":
-    case "COTIZACION_FINAL":
-      return "comparativo";
-    case "GANADA":
-    case "RECOTIZACION":
-    case "COMPRA":
-      return "checklist";
-    case "ENTREGA":
-      return "historial";
-    case "PROPUESTA_ADMIN":
-    case "REVISION_DIRECTOR":
-    case "ENVIADA":
-      return "resumen";
-    case "COBRANZA":
-      return "checklist";
-    default:
-      return "resumen";
-  }
 }

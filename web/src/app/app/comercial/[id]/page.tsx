@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth/config";
 import { AppShell } from "@/components/layout/app-shell";
@@ -12,10 +11,8 @@ import { RelacionesPanel } from "@/components/comercial/relaciones-panel";
 import { ChecklistPanel } from "@/components/comercial/checklist-panel";
 import { ProcessTree } from "@/components/comercial/process-tree";
 import { WorkflowPanel } from "@/components/comercial/workflow-panel";
-import {
-  ExpedienteExplorer,
-  defaultTabForEstatus,
-} from "@/components/comercial/expediente-explorer";
+import { ExpedienteExplorer } from "@/components/comercial/expediente-explorer";
+import { defaultTabForEstatus } from "@/lib/domain/expediente-utils";
 import { listCambiosPendientesExpediente } from "@/app/app/comercial/edit-actions";
 import { getExpedienteById } from "@/lib/db/queries";
 import { listTareasExpediente } from "@/lib/db/tareas";
@@ -81,14 +78,7 @@ export default async function ExpedientePage({
         responsableNombre={exp.responsableNombre}
       />
 
-      <Suspense
-        fallback={
-          <div className="glass rounded-[28px] p-8 text-sm text-[var(--text-muted)]">
-            Cargando explorador…
-          </div>
-        }
-      >
-        <ExpedienteExplorer
+      <ExpedienteExplorer
           defaultTab={defaultTabForEstatus(exp.estatus)}
           tabs={[
             { id: "resumen", label: "Resumen", short: "Res" },
@@ -269,8 +259,7 @@ export default async function ExpedientePage({
               </div>
             ),
           }}
-        />
-      </Suspense>
+      />
     </AppShell>
   );
 }
