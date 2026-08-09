@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
 import { GlassModal } from "@/components/ui/glass-modal";
@@ -74,6 +75,7 @@ export function ComparativoClient({
   >([]);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
+  const router = useRouter();
 
   const matrix = useMemo(() => {
     const byPartida: Record<
@@ -171,7 +173,10 @@ export function ComparativoClient({
         "PROPUESTA_ADMIN",
         "Cotización final pasada a Admin/Finanzas (Itza)",
       );
-      setMsg("Expediente en PROPUESTA_ADMIN → Itza");
+      setMsg("Pasado a Itza — abre Propuestas");
+      setShowFinal(false);
+      router.push("/app/propuestas");
+      router.refresh();
     });
   }
 

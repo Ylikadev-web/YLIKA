@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
 import { ComparativoClient } from "@/app/app/comercial/[id]/comparativo-client";
 import { ExcelImportPanel } from "@/components/comercial/excel-import";
+import { WorkflowPanel } from "@/components/comercial/workflow-panel";
 import { getExpedienteById } from "@/lib/db/queries";
 import { ESTATUS_LABEL, type EstatusExpediente } from "@/lib/domain/workflow";
 import type { SelectionMode } from "@/lib/quotes/comparativo";
@@ -51,6 +52,8 @@ export default async function ExpedientePage({
           </Glass>
         ))}
       </div>
+
+      <WorkflowPanel expedienteId={exp.id} estatus={exp.estatus} />
 
       <ExcelImportPanel expedienteId={exp.id} nextAlias={nextAlias} />
 

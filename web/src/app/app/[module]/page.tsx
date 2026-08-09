@@ -3,6 +3,7 @@ import { NAV_ITEMS } from "@/components/nav/nav-items";
 
 const BUILT = new Set([
   "comercial",
+  "propuestas",
   "compras",
   "entregas",
   "clientes",

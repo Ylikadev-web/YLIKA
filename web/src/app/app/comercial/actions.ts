@@ -123,6 +123,16 @@ export async function createExpedienteAction(formData: FormData) {
   return { id: expediente.id, codigo };
 }
 
+async function resolveUserIdByEmail(email: string) {
+  const db = getDb();
+  const [u] = await db
+    .select({ id: s.users.id })
+    .from(s.users)
+    .where(eq(s.users.email, email))
+    .limit(1);
+  return u?.id ?? null;
+}
+
 export async function transitionExpedienteAction(
   expedienteId: string,
   hacia: EstatusExpediente,
@@ -139,20 +149,39 @@ export async function transitionExpedienteAction(
 
   const userId =
     user.id === "demo-miguel"
-      ? (
-          await db
-            .select({ id: s.users.id })
-            .from(s.users)
-            .where(eq(s.users.email, "miguel@ylika.local"))
-            .limit(1)
-        )[0]?.id
+      ? await resolveUserIdByEmail("miguel@ylika.local")
       : user.id;
+
+  // Asigna responsable según etapa (si existe el usuario seed)
+  let responsableId = exp.responsableActualId;
+  if (hacia === "PROPUESTA_ADMIN" || hacia === "COBRANZA") {
+    responsableId =
+      (await resolveUserIdByEmail("itza@ylika.local")) ?? responsableId;
+  } else if (hacia === "REVISION_DIRECTOR" || hacia === "ENVIADA") {
+    responsableId =
+      (await resolveUserIdByEmail("nesim@ylika.local")) ?? responsableId;
+  } else if (
+    hacia === "REVISION_REQUISITOS" ||
+    hacia === "ORDEN_COTIZAR"
+  ) {
+    responsableId =
+      (await resolveUserIdByEmail("laura@ylika.local")) ?? responsableId;
+  } else if (
+    hacia === "EN_COTIZACION" ||
+    hacia === "COMPARATIVO" ||
+    hacia === "COTIZACION_FINAL" ||
+    hacia === "RECOTIZACION" ||
+    hacia === "COMPRA"
+  ) {
+    responsableId = userId ?? responsableId;
+  }
 
   await db
     .update(s.expedientes)
     .set({
       estatus: hacia,
       updatedAt: new Date(),
+      responsableActualId: responsableId,
       aptoRequisitos:
         hacia === "APTO" || hacia === "ORDEN_COTIZAR"
           ? true
@@ -174,6 +203,8 @@ export async function transitionExpedienteAction(
   revalidatePath(`/app/comercial/${expedienteId}`);
   revalidatePath("/app/comercial");
   revalidatePath("/app/licitaciones");
+  revalidatePath("/app/propuestas");
+  revalidatePath("/app");
 }
 
 export async function replacePartidasAction(
@@ -546,6 +577,53 @@ export async function noParticipamosAction(expedienteId: string) {
     "CANCELADO",
     "No participamos — requisitos / decisión Laura",
   );
+}
+
+/** Itza: propuesta lista → revisión director */
+export async function enviarADirectorAction(formData: FormData) {
+  const expedienteId = String(formData.get("expedienteId") || "");
+  if (!expedienteId) throw new Error("Expediente requerido");
+  await transitionExpedienteAction(
+    expedienteId,
+    "REVISION_DIRECTOR",
+    "Propuesta económica/técnica lista → Nesim",
+  );
+  revalidatePath("/app/propuestas");
+  revalidatePath("/app");
+}
+
+/** Nesim: envía al cliente */
+export async function marcarEnviadaAction(formData: FormData) {
+  const expedienteId = String(formData.get("expedienteId") || "");
+  if (!expedienteId) throw new Error("Expediente requerido");
+  await transitionExpedienteAction(
+    expedienteId,
+    "ENVIADA",
+    "Propuesta enviada por Director",
+  );
+  revalidatePath("/app/propuestas");
+  revalidatePath("/app");
+}
+
+export async function marcarGanadaAction(formData: FormData) {
+  const expedienteId = String(formData.get("expedienteId") || "");
+  if (!expedienteId) throw new Error("Expediente requerido");
+  await transitionExpedienteAction(expedienteId, "GANADA", "Fallo: ganada");
+  await transitionExpedienteAction(
+    expedienteId,
+    "RECOTIZACION",
+    "Ganada → recotizar mejores precios",
+  );
+  revalidatePath("/app/propuestas");
+  revalidatePath("/app");
+}
+
+export async function marcarPerdidaAction(formData: FormData) {
+  const expedienteId = String(formData.get("expedienteId") || "");
+  if (!expedienteId) throw new Error("Expediente requerido");
+  await transitionExpedienteAction(expedienteId, "PERDIDA", "Fallo: perdida");
+  revalidatePath("/app/propuestas");
+  revalidatePath("/app");
 }
 
 export async function importListaLimpiaExcelAction(formData: FormData) {

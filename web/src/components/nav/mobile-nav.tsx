@@ -11,7 +11,7 @@ export function MobileNav() {
   const pathname = usePathname();
   const { countForHref } = usePendientes();
   const primary = NAV_ITEMS.filter((i) =>
-    ["/app", "/app/comercial", "/app/proyectos", "/app/configuracion"].includes(
+    ["/app", "/app/comercial", "/app/propuestas", "/app/configuracion"].includes(
       i.href,
     ),
   );

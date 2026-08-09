@@ -67,10 +67,16 @@ export async function listPendientesForRoles(roles: string[] = []) {
             : r.estatus === "REVISION_DIRECTOR"
               ? "Nesim"
               : "Ventas";
+      const href =
+        r.estatus === "PROPUESTA_ADMIN" ||
+        r.estatus === "REVISION_DIRECTOR" ||
+        r.estatus === "ENVIADA"
+          ? "/app/propuestas"
+          : `/app/comercial/${r.id}`;
       items.push({
         id: `exp-${r.id}`,
         title: `${r.codigo} · ${ESTATUS_LABEL[r.estatus as EstatusExpediente] ?? r.estatus}`,
-        href: `/app/comercial/${r.id}`,
+        href,
         owner,
         tone:
           owner === "Laura"

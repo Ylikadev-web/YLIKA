@@ -1,5 +1,6 @@
 import {
   Building2,
+  ClipboardCheck,
   FileStack,
   FolderKanban,
   Gavel,
@@ -23,6 +24,7 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/app", label: "Inicio", icon: Home },
   { href: "/app/comercial", label: "Comercial", icon: Building2 },
+  { href: "/app/propuestas", label: "Propuestas", icon: ClipboardCheck },
   { href: "/app/compras", label: "Compras", icon: ShoppingCart },
   { href: "/app/entregas", label: "Entregas", icon: Truck },
   { href: "/app/clientes", label: "Clientes", icon: Users },
