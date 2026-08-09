@@ -5,7 +5,7 @@
 ## Progress bar
 
 ```
-███████████████████░  ~92%  Catálogo proveedores + Relaciones + calendario entregas
+████████████████████  ~95%  Header compacto + bases checklist + PDF propuesta
 ```
 
 | # | Entregable | Estado |
@@ -27,7 +27,7 @@
 | 15 | Seed equipo Laura / Fernando / Itza / Nesim | ✅ |
 | 16 | YLIKA Bot pendientes por rol | ✅ |
 | 17 | UI simplificada (orbs flotantes, menos texto) | ✅ |
-| 18 | Análisis bases licitación (cumplimos / no) | ⬜ tras explicar muestras reales |
+| 18 | Análisis bases licitación (cumplimos / no) | ✅ checklist Bases en expediente (template; parse AI pendiente) |
 | 19 | Catálogo proveedores clasificado (tipo/esp/marca/zona) | ✅ Compras + seed |
 | 20 | Relaciones partida↔proveedor/marca en expediente | ✅ auto desde Comparativo |
 | 21 | Calendario entregas + hover tip dashboard/bot | ✅ Entregas + Inicio + Bot |
