@@ -1,5 +1,6 @@
 export const EXPEDIENTE_TAB_IDS = [
   "resumen",
+  "bases",
   "checklist",
   "edicion",
   "importar",
@@ -14,6 +15,7 @@ export type ExpedienteTabId = (typeof EXPEDIENTE_TAB_IDS)[number];
 export function defaultTabForEstatus(estatus: string): ExpedienteTabId {
   switch (estatus) {
     case "REVISION_REQUISITOS":
+      return "bases";
     case "APTO":
     case "ORDEN_COTIZAR":
       return "resumen";

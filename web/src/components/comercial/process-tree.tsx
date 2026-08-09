@@ -25,37 +25,44 @@ const STAGE_INDEX: Partial<Record<EstatusExpediente, number>> = {
   CANCELADO: -1,
 };
 
+/** Compacto: aprovecha hueco bajo el header sin repetir el folio */
 export function ProcessTree({
   estatus,
   responsableNombre,
-  codigo,
 }: {
   estatus: string;
   responsableNombre?: string | null;
-  codigo: string;
+  /** @deprecated folio ya va en AppShell compacto */
+  codigo?: string;
 }) {
   const current = STAGE_INDEX[estatus as EstatusExpediente] ?? 0;
   const cancelled = estatus === "CANCELADO" || estatus === "PERDIDA";
+  const activeStage = PIPELINE_STAGES[current];
 
   return (
-    <section className="float-card glass mb-4 overflow-hidden p-4">
-      <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-        <div>
-          <p className="text-sm font-semibold">Árbol de proceso</p>
-          <p className="text-xs text-[var(--text-muted)]">
-            {codigo} · fase actual con responsable
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-[var(--text-muted)]">Con quién está</p>
-          <p className="text-sm font-medium">
-            {responsableNombre ?? PIPELINE_STAGES[current]?.owner ?? "—"}
-          </p>
-        </div>
+    <section className="glass mb-3 overflow-hidden rounded-2xl px-3 py-2.5">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] text-[var(--text-muted)]">
+          Proceso
+          {activeStage ? (
+            <>
+              {" · "}
+              <span className="font-medium text-[var(--text)]">
+                {activeStage.label}
+              </span>
+            </>
+          ) : null}
+        </p>
+        <p className="text-[11px] text-[var(--text-muted)]">
+          Con ·{" "}
+          <span className="font-medium text-[var(--text)]">
+            {responsableNombre ?? activeStage?.owner ?? "—"}
+          </span>
+        </p>
       </div>
 
-      <div className="relative overflow-x-auto pb-2">
-        <div className="flex min-w-max items-stretch gap-2">
+      <div className="relative overflow-x-auto pb-0.5">
+        <div className="flex min-w-max items-center gap-1">
           {PIPELINE_STAGES.map((stage, idx) => {
             const done = !cancelled && idx < current;
             const active = !cancelled && idx === current;
@@ -63,61 +70,38 @@ export function ProcessTree({
             return (
               <motion.div
                 key={stage.key}
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.04 }}
-                className="relative flex w-[108px] flex-col"
+                transition={{ delay: idx * 0.03 }}
+                className="relative flex items-center"
+                title={`${stage.label} · ${stage.owner}`}
               >
-                {idx < PIPELINE_STAGES.length - 1 ? (
+                {idx > 0 ? (
                   <span
                     className={cn(
-                      "absolute left-[54px] top-4 h-0.5 w-[calc(100%+0.5rem)]",
+                      "mr-1 h-px w-2.5",
                       done || active
                         ? "bg-[color-mix(in_srgb,var(--accent)_55%,transparent)]"
-                        : "bg-[color-mix(in_srgb,var(--text)_12%,transparent)]",
+                        : "bg-[color-mix(in_srgb,var(--text)_14%,transparent)]",
                     )}
                     aria-hidden
                   />
                 ) : null}
                 <div
                   className={cn(
-                    "relative z-[1] flex flex-col rounded-2xl px-2.5 py-3 transition",
+                    "flex items-center gap-1.5 rounded-full px-2 py-1 text-[10px] font-medium transition",
                     active &&
-                      "bg-[color-mix(in_srgb,var(--accent)_20%,transparent)] ring-2 ring-[var(--accent)] shadow-[0_0_28px_color-mix(in_srgb,var(--accent)_35%,transparent)]",
+                      "bg-[color-mix(in_srgb,var(--accent)_22%,transparent)] ring-1 ring-[var(--accent)]",
                     done &&
-                      "bg-[color-mix(in_srgb,var(--accent)_10%,transparent)]",
-                    future && "glass-thin opacity-60",
+                      "bg-[color-mix(in_srgb,var(--accent)_10%,transparent)] text-[var(--text)]",
+                    future && "opacity-45",
                   )}
                 >
-                  <motion.span
-                    className="mb-2 h-2 w-2 rounded-full"
+                  <span
+                    className="h-1.5 w-1.5 shrink-0 rounded-full"
                     style={{ background: stage.color }}
-                    animate={
-                      active
-                        ? { scale: [1, 1.35, 1], opacity: [0.7, 1, 0.7] }
-                        : { scale: 1, opacity: 1 }
-                    }
-                    transition={
-                      active
-                        ? { repeat: Infinity, duration: 1.6 }
-                        : undefined
-                    }
                   />
-                  <p className="text-[11px] font-semibold leading-tight">
-                    {stage.label}
-                  </p>
-                  <p className="mt-1 text-[10px] text-[var(--text-muted)]">
-                    {stage.owner}
-                  </p>
-                  {active ? (
-                    <p className="mt-2 text-[10px] font-medium text-[var(--accent)]">
-                      Ahora
-                    </p>
-                  ) : done ? (
-                    <p className="mt-2 text-[10px] text-[var(--text-muted)]">
-                      Hecho
-                    </p>
-                  ) : null}
+                  <span className="max-w-[72px] truncate">{stage.label}</span>
                 </div>
               </motion.div>
             );
@@ -126,7 +110,7 @@ export function ProcessTree({
       </div>
 
       {cancelled ? (
-        <p className="mt-3 text-xs text-[var(--danger)]">
+        <p className="mt-2 text-[11px] text-[var(--danger)]">
           Proceso en {estatus === "PERDIDA" ? "PERDIDA" : "CANCELADO"}
         </p>
       ) : null}

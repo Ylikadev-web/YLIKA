@@ -99,9 +99,17 @@ export default async function PropuestasPage() {
                   {ESTATUS_LABEL[e.estatus as EstatusExpediente] ?? e.estatus}
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Link href={`/app/comercial/${e.id}`}>
+                  <Link href={`/app/comercial/${e.id}?tab=resumen`}>
                     <Button size="sm" variant="glass">
                       Abrir
+                    </Button>
+                  </Link>
+                  <Link
+                    href={`/app/comercial/${e.id}/propuesta`}
+                    target="_blank"
+                  >
+                    <Button size="sm" variant="ghost">
+                      PDF
                     </Button>
                   </Link>
                   <form action={enviarADirectorAction}>

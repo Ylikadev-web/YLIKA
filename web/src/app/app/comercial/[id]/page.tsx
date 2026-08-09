@@ -9,12 +9,14 @@ import { ExcelImportPanel } from "@/components/comercial/excel-import";
 import { EditPanel } from "@/components/comercial/edit-panel";
 import { RelacionesPanel } from "@/components/comercial/relaciones-panel";
 import { ChecklistPanel } from "@/components/comercial/checklist-panel";
+import { BasesPanel } from "@/components/comercial/bases-panel";
 import { ProcessTree } from "@/components/comercial/process-tree";
 import { WorkflowPanel } from "@/components/comercial/workflow-panel";
 import { ExpedienteExplorer } from "@/components/comercial/expediente-explorer";
 import { defaultTabForEstatus } from "@/lib/domain/expediente-utils";
 import { listCambiosPendientesExpediente } from "@/app/app/comercial/edit-actions";
 import { getExpedienteById } from "@/lib/db/queries";
+import { ensureRequisitosBases } from "@/lib/db/requisitos";
 import { listTareasExpediente } from "@/lib/db/tareas";
 import {
   listMarcas,
@@ -44,6 +46,9 @@ export default async function ExpedientePage({
     ]);
   if (!exp) notFound();
 
+  const requisitos = await ensureRequisitosBases(id);
+  const basesPend = requisitos.filter((r) => r.cumple == null).length;
+
   const roles = (session?.user as { roles?: string[] } | undefined)?.roles ?? [];
   const canApprove =
     roles.includes("DIRECTOR") ||
@@ -61,8 +66,9 @@ export default async function ExpedientePage({
 
   return (
     <AppShell
+      density="compact"
       title={exp.codigo}
-      subtitle={ESTATUS_LABEL[exp.estatus as EstatusExpediente] ?? exp.estatus}
+      subtitle={`${ESTATUS_LABEL[exp.estatus as EstatusExpediente] ?? exp.estatus} · ${exp.titulo}`}
       actions={
         <Link href="/app/comercial">
           <Button variant="ghost" size="sm">
@@ -71,9 +77,7 @@ export default async function ExpedientePage({
         </Link>
       }
     >
-      {/* Siempre visible: mapa del proceso */}
       <ProcessTree
-        codigo={exp.codigo}
         estatus={exp.estatus}
         responsableNombre={exp.responsableNombre}
       />
@@ -82,6 +86,12 @@ export default async function ExpedientePage({
           defaultTab={defaultTabForEstatus(exp.estatus)}
           tabs={[
             { id: "resumen", label: "Resumen", short: "Res" },
+            {
+              id: "bases",
+              label: "Bases",
+              short: "Bas",
+              badge: basesPend || null,
+            },
             {
               id: "checklist",
               label: "Checklist",
@@ -129,29 +139,31 @@ export default async function ExpedientePage({
           panels={{
             resumen: (
               <div className="space-y-3">
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                  {[
-                    ["Empresa", exp.empresaCodigo],
-                    ["Sector", exp.sector],
-                    ["Tipo", exp.tipoNombre],
-                    ["Cliente", exp.clienteNombre ?? "—"],
-                  ].map(([k, v]) => (
-                    <Glass key={k} className="float-card px-4 py-3">
-                      <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                        {k}
-                      </p>
-                      <p className="mt-1 text-sm font-medium">{v}</p>
-                    </Glass>
-                  ))}
-                </div>
-                <Glass className="float-card p-4">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                    Título
-                  </p>
-                  <p className="mt-1 text-sm font-medium">{exp.titulo}</p>
+                <Glass className="px-3 py-2.5">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                    <span>
+                      <span className="text-[var(--text-muted)]">Empresa · </span>
+                      {exp.empresaCodigo}
+                    </span>
+                    <span>
+                      <span className="text-[var(--text-muted)]">Sector · </span>
+                      {exp.sector}
+                    </span>
+                    <span>
+                      <span className="text-[var(--text-muted)]">Tipo · </span>
+                      {exp.tipoNombre}
+                    </span>
+                    <span>
+                      <span className="text-[var(--text-muted)]">Cliente · </span>
+                      {exp.clienteNombre ?? "—"}
+                    </span>
+                  </div>
                 </Glass>
                 <WorkflowPanel expedienteId={exp.id} estatus={exp.estatus} />
               </div>
+            ),
+            bases: (
+              <BasesPanel expedienteId={exp.id} requisitos={requisitos} />
             ),
             checklist: (
               <ChecklistPanel

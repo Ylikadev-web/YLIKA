@@ -47,6 +47,11 @@ export function WorkflowPanel({
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
+            <Link href={`/app/comercial/${expedienteId}/propuesta`} target="_blank">
+              <Button size="sm" variant="glass">
+                PDF propuesta
+              </Button>
+            </Link>
             <Link href="/app/propuestas">
               <Button size="sm" variant="ghost">
                 Ver cola
