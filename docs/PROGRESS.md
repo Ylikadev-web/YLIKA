@@ -31,6 +31,7 @@
 | 19 | Catálogo proveedores clasificado (tipo/esp/marca/zona) | ✅ Compras + seed |
 | 20 | Relaciones partida↔proveedor/marca en expediente | ✅ auto desde Comparativo |
 | 21 | Calendario entregas + hover tip dashboard/bot | ✅ Entregas + Inicio + Bot |
+| 22 | Auto: entregas hoy, docs por vencer, checklist ganada, factura draft | ✅ pendientes + tareas |
 
 ---
 
