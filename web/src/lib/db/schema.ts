@@ -731,6 +731,28 @@ export const solicitudesCambio = pgTable("solicitudes_cambio", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+/** Checklist operativo por expediente (recotización, factura, etc.) */
+export const estadoTareaEnum = pgEnum("estado_tarea_expediente", [
+  "PENDIENTE",
+  "HECHO",
+  "CANCELADO",
+]);
+
+export const expedienteTareas = pgTable("expediente_tareas", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  expedienteId: uuid("expediente_id")
+    .notNull()
+    .references(() => expedientes.id, { onDelete: "cascade" }),
+  tipo: text("tipo").notNull(), // RECOTIZAR_PROVEEDOR | FACTURAR | ENTREGA | OTRO
+  titulo: text("titulo").notNull(),
+  estado: estadoTareaEnum("estado").notNull().default("PENDIENTE"),
+  orden: integer("orden").notNull().default(100),
+  meta: jsonb("meta").notNull().default({}),
+  asignadoA: uuid("asignado_a").references(() => users.id),
+  completedAt: timestamp("completed_at", { mode: "date" }),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   roles: many(usuarioRoles),
   empresas: many(usuarioEmpresas),

@@ -8,10 +8,12 @@ import { ComparativoClient } from "@/app/app/comercial/[id]/comparativo-client";
 import { ExcelImportPanel } from "@/components/comercial/excel-import";
 import { EditPanel } from "@/components/comercial/edit-panel";
 import { RelacionesPanel } from "@/components/comercial/relaciones-panel";
+import { ChecklistPanel } from "@/components/comercial/checklist-panel";
 import { ProcessTree } from "@/components/comercial/process-tree";
 import { WorkflowPanel } from "@/components/comercial/workflow-panel";
 import { listCambiosPendientesExpediente } from "@/app/app/comercial/edit-actions";
 import { getExpedienteById } from "@/lib/db/queries";
+import { listTareasExpediente } from "@/lib/db/tareas";
 import {
   listMarcas,
   listPartidaRelaciones,
@@ -28,7 +30,7 @@ export default async function ExpedientePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [exp, session, cambios, relaciones, proveedores, marcas] =
+  const [exp, session, cambios, relaciones, proveedores, marcas, tareas] =
     await Promise.all([
       getExpedienteById(id),
       auth(),
@@ -36,6 +38,7 @@ export default async function ExpedientePage({
       listPartidaRelaciones(id),
       listProveedores(),
       listMarcas(),
+      listTareasExpediente(id),
     ]);
   if (!exp) notFound();
 
@@ -85,6 +88,12 @@ export default async function ExpedientePage({
 
       <WorkflowPanel expedienteId={exp.id} estatus={exp.estatus} />
 
+      <ChecklistPanel
+        expedienteId={exp.id}
+        tareas={tareas}
+        estatus={exp.estatus}
+      />
+
       <EditPanel
         expedienteId={exp.id}
         titulo={exp.titulo}
@@ -94,7 +103,11 @@ export default async function ExpedientePage({
         canApprove={canApprove}
       />
 
-      <ExcelImportPanel expedienteId={exp.id} nextAlias={nextAlias} />
+      <ExcelImportPanel
+        expedienteId={exp.id}
+        nextAlias={nextAlias}
+        proveedores={proveedores}
+      />
 
       <RelacionesPanel
         expedienteId={exp.id}

@@ -621,6 +621,7 @@ export async function marcarEnviadaAction(formData: FormData) {
 }
 
 export async function marcarGanadaAction(formData: FormData) {
+  const user = await requireUser();
   const expedienteId = String(formData.get("expedienteId") || "");
   if (!expedienteId) throw new Error("Expediente requerido");
   await transitionExpedienteAction(expedienteId, "GANADA", "Fallo: ganada");
@@ -629,7 +630,42 @@ export async function marcarGanadaAction(formData: FormData) {
     "RECOTIZACION",
     "Ganada → recotizar mejores precios",
   );
+
+  // Auto checklist: recotizar por proveedor en Relaciones
+  const userId =
+    user.id === "demo-miguel"
+      ? await resolveUserIdByEmail("miguel@ylika.local")
+      : user.id;
+  const { seedChecklistRecotizacion } = await import("@/lib/db/tareas");
+  await seedChecklistRecotizacion(expedienteId, userId);
+
+  // Recordatorio bot a Miguel/Ventas (mañana 9:00)
+  if (userId) {
+    const db = getDb();
+    const cuando = new Date();
+    cuando.setDate(cuando.getDate() + 1);
+    cuando.setHours(9, 0, 0, 0);
+    await db.insert(s.botRecordatorios).values({
+      userId,
+      texto: "Recotizar expediente ganado — revisa el checklist",
+      cuando,
+      meta: { expedienteId, tipo: "RECOTIZACION" },
+    });
+  }
+
+  revalidatePath(`/app/comercial/${expedienteId}`);
   revalidatePath("/app/propuestas");
+  revalidatePath("/app");
+}
+
+export async function completarTareaExpedienteAction(formData: FormData) {
+  await requireUser();
+  const tareaId = String(formData.get("tareaId") || "");
+  const expedienteId = String(formData.get("expedienteId") || "");
+  if (!tareaId) throw new Error("Tarea requerida");
+  const { completarTarea } = await import("@/lib/db/tareas");
+  await completarTarea(tareaId);
+  revalidatePath(`/app/comercial/${expedienteId}`);
   revalidatePath("/app");
 }
 

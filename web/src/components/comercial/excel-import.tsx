@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { FileSpreadsheet, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
@@ -9,19 +9,40 @@ import {
   importListaLimpiaExcelAction,
 } from "@/app/app/comercial/actions";
 
+type ProveedorOpt = {
+  id: string;
+  razonSocial: string;
+  preferido: boolean;
+  tipo: string;
+  especialidades: string[];
+};
+
 export function ExcelImportPanel({
   expedienteId,
   nextAlias,
+  proveedores = [],
 }: {
   expedienteId: string;
   nextAlias: string;
+  proveedores?: ProveedorOpt[];
 }) {
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [proveedorNombre, setProveedorNombre] = useState("");
+
+  const preferidos = useMemo(
+    () => proveedores.filter((p) => p.preferido),
+    [proveedores],
+  );
+  const sugerido = preferidos[0]?.razonSocial ?? "";
 
   function run(
-    action: (fd: FormData) => Promise<{ ok: true; message: string } | { ok: false; error: string }>,
+    action: (
+      fd: FormData,
+    ) => Promise<
+      { ok: true; message: string } | { ok: false; error: string }
+    >,
     form: HTMLFormElement,
   ) {
     setMsg(null);
@@ -71,15 +92,49 @@ export function ExcelImportPanel({
             run(importCotizacionExcelAction, e.currentTarget);
           }}
         >
-          <p className="text-xs font-medium">Cotización proveedor ({nextAlias})</p>
+          <p className="text-xs font-medium">
+            Cotización proveedor ({nextAlias})
+          </p>
           <input type="hidden" name="expedienteId" value={expedienteId} />
           <input type="hidden" name="alias" value={nextAlias} />
+
+          {preferidos.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {preferidos.slice(0, 4).map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setProveedorNombre(p.razonSocial)}
+                  className="rounded-xl bg-[color-mix(in_srgb,var(--accent)_16%,transparent)] px-2 py-1 text-[10px] font-medium text-[var(--text)] transition hover:bg-[color-mix(in_srgb,var(--accent)_28%,transparent)]"
+                  title={p.especialidades.join(", ") || p.tipo}
+                >
+                  ★ {p.razonSocial}
+                </button>
+              ))}
+            </div>
+          )}
+
           <input
             name="proveedorNombre"
             required
-            placeholder="Nombre proveedor"
+            list="prov-sugeridos"
+            value={proveedorNombre}
+            onChange={(e) => setProveedorNombre(e.target.value)}
+            placeholder={
+              sugerido
+                ? `ej. ${sugerido}`
+                : "Nombre proveedor"
+            }
             className="glass-thin h-9 w-full rounded-xl px-3 text-xs"
           />
+          <datalist id="prov-sugeridos">
+            {proveedores.map((p) => (
+              <option key={p.id} value={p.razonSocial}>
+                {p.preferido ? "Preferido" : p.tipo}
+              </option>
+            ))}
+          </datalist>
+
           <label className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
             <input name="incluyeIva" type="checkbox" defaultChecked value="1" />
             Precios con IVA

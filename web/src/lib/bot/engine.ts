@@ -156,6 +156,57 @@ export async function handleBotMessage(input: {
       }
     }
   }
+  // Entregas hoy / mañana
+  else if (/entrega(s)?\s*(de\s*)?(hoy|ma[nñ]ana)|qu[eé] se entrega/i.test(lower)) {
+    const items = await listPendientesForRoles(input.roles, input.userId);
+    const entregas = items.filter(
+      (i) =>
+        i.id.startsWith("rem-hoy-") ||
+        i.id.startsWith("rem-man-") ||
+        i.id.startsWith("rem-"),
+    );
+    if (!entregas.length) {
+      reply = {
+        text: "No hay entregas programadas en tu cola ahora.",
+        links: [{ label: "Calendario", href: "/app/entregas" }],
+      };
+    } else {
+      reply = {
+        text: entregas
+          .slice(0, 8)
+          .map((i) => {
+            const tip = i.tip
+              ? `\n  → ${i.tip.donde ?? ""} · ${i.tip.conQuien ?? ""}`
+              : "";
+            return `• ${i.title}${tip}`;
+          })
+          .join("\n"),
+        links: [
+          { label: "Calendario", href: "/app/entregas" },
+          ...entregas.slice(0, 3).map((i) => ({ label: i.title, href: i.href })),
+        ],
+      };
+    }
+  }
+  // Docs por vencer
+  else if (/doc(umento)?s?\s*(por\s*)?venc|vencid|constancia/i.test(lower)) {
+    const items = await listPendientesForRoles(
+      ["LICITACIONES", "ADMIN_SISTEMAS"],
+      input.userId,
+    );
+    const docs = items.filter((i) => i.id.startsWith("doc-"));
+    if (!docs.length) {
+      reply = {
+        text: "Ningún documento de empresa por vencer o vencido. Todo vigente.",
+        links: [{ label: "Licitaciones", href: "/app/licitaciones" }],
+      };
+    } else {
+      reply = {
+        text: docs.map((d) => `• ${d.title}`).join("\n"),
+        links: [{ label: "Actualizar docs", href: "/app/licitaciones" }],
+      };
+    }
+  }
   // Pendientes
   else if (/pendiente|qu[eé] tengo|mi cola|responsabilidad/i.test(lower)) {
     const items = await listPendientesForRoles(input.roles);
@@ -228,7 +279,8 @@ export async function handleBotMessage(input: {
       text:
         `Hola${input.userName ? `, ${input.userName.split(" ")[0]}` : ""}. Puedo:\n` +
         `• Recordarte cosas (“recuérdame cotizar con MEXIACEROS mañana a primera hora”)\n` +
-        `• Buscar docs de empresa (“CV actualizado de MONE”)\n` +
+        `• Buscar docs de empresa (“CV actualizado de MONE” / “docs por vencer”)\n` +
+        `• Entregas de hoy (“qué se entrega hoy”)\n` +
         `• Listar tus pendientes\n` +
         `• Ubicar un expediente por folio`,
     };

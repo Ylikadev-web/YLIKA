@@ -430,18 +430,29 @@ export async function marcarRemisionEntregadaAction(formData: FormData) {
     .limit(1);
   if (!rem) throw new Error("Remisión no encontrada");
 
+  // Asigna Itza como responsable de cobranza
+  const [itza] = await db
+    .select({ id: s.users.id })
+    .from(s.users)
+    .where(eq(s.users.email, "itza@ylika.local"))
+    .limit(1);
+
   await db
     .update(s.remisiones)
     .set({
       estatus: "ENTREGADA",
       fechaEntrega: new Date(),
-      recibidoPorFinanzasId: userId,
+      recibidoPorFinanzasId: itza?.id ?? userId,
     })
     .where(eq(s.remisiones.id, remisionId));
 
   await db
     .update(s.expedientes)
-    .set({ estatus: "COBRANZA", updatedAt: new Date() })
+    .set({
+      estatus: "COBRANZA",
+      updatedAt: new Date(),
+      responsableActualId: itza?.id ?? rem.recibidoPorFinanzasId,
+    })
     .where(eq(s.expedientes.id, rem.expedienteId));
 
   await db.insert(s.bitacora).values({
@@ -452,7 +463,64 @@ export async function marcarRemisionEntregadaAction(formData: FormData) {
     aEstatus: "COBRANZA",
   });
 
+  // Draft factura (placeholder) + tarea FACTURAR para Itza
+  const draftName = `FACT-${rem.folio}.pdf`;
+  const existingDoc = await db
+    .select({ id: s.documentos.id })
+    .from(s.documentos)
+    .where(
+      and(
+        eq(s.documentos.expedienteId, rem.expedienteId),
+        eq(s.documentos.tipo, "FACTURA"),
+      ),
+    )
+    .limit(1);
+  if (!existingDoc.length) {
+    await db.insert(s.documentos).values({
+      expedienteId: rem.expedienteId,
+      empresaId: rem.empresaId,
+      tipo: "FACTURA",
+      nombre: draftName,
+      storagePath: `facturas/draft/${draftName}`,
+      uploadedBy: itza?.id ?? userId,
+    });
+  }
+
+  const { seedTareaFacturar } = await import("@/lib/db/tareas");
+  await seedTareaFacturar(rem.expedienteId, {
+    folioRemision: rem.folio,
+    asignadoA: itza?.id ?? null,
+  });
+
+  // Recordatorio bot a Itza hoy +2h
+  if (itza?.id) {
+    const cuando = new Date(Date.now() + 2 * 3600_000);
+    await db.insert(s.botRecordatorios).values({
+      userId: itza.id,
+      texto: `Cobranza lista · remisión ${rem.folio} — revisar draft factura`,
+      cuando,
+      meta: {
+        expedienteId: rem.expedienteId,
+        remisionId: rem.id,
+        tipo: "COBRANZA",
+      },
+    });
+  }
+
+  // Marca tarea ENTREGA del checklist si existía
+  await db
+    .update(s.expedienteTareas)
+    .set({ estado: "HECHO", completedAt: new Date() })
+    .where(
+      and(
+        eq(s.expedienteTareas.expedienteId, rem.expedienteId),
+        eq(s.expedienteTareas.tipo, "ENTREGA"),
+        eq(s.expedienteTareas.estado, "PENDIENTE"),
+      ),
+    );
+
   revalidatePath("/app/entregas");
+  revalidatePath("/app/documentos");
   revalidatePath("/app/tesoreria");
   revalidatePath("/app");
   revalidatePath(`/app/comercial/${rem.expedienteId}`);

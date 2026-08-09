@@ -1,6 +1,8 @@
-import { and, asc, desc, eq, inArray, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte, ne } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { listPendientesAprobacion } from "@/lib/db/bolsa";
+import { calcEstadoDoc } from "@/lib/db/queries";
+import { listTareasPendientesGlobal } from "@/lib/db/tareas";
 import * as s from "@/lib/db/schema";
 import { ESTATUS_LABEL, type EstatusExpediente } from "@/lib/domain/workflow";
 
@@ -35,6 +37,18 @@ const ROLE_STATUSES: Record<string, EstatusExpediente[]> = {
   ADMIN_SISTEMAS: [],
 };
 
+function startOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x;
+}
+
+function endOfDay(d = new Date()) {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x;
+}
+
 export async function listPendientesForRoles(
   roles: string[] = [],
   userId?: string | null,
@@ -51,6 +65,175 @@ export async function listPendientesForRoles(
   }
 
   const items: PendienteItem[] = [];
+  const today0 = startOfDay();
+  const today1 = endOfDay();
+  const tomorrow1 = endOfDay(new Date(Date.now() + 86400_000));
+
+  // ── Entregas de HOY (prioridad) ────────────────────────────────────
+  if (
+    roles.includes("COMPRAS_VENTAS") ||
+    roles.includes("ADMIN_SISTEMAS") ||
+    roles.includes("ADMIN_FINANZAS")
+  ) {
+    const hoy = await db
+      .select({
+        id: s.remisiones.id,
+        folio: s.remisiones.folio,
+        estatus: s.remisiones.estatus,
+        destinatario: s.remisiones.destinatario,
+        direccionEntrega: s.remisiones.direccionEntrega,
+        responsableEntrega: s.remisiones.responsableEntrega,
+        fechaProgramada: s.remisiones.fechaProgramada,
+        expedienteId: s.expedientes.id,
+        titulo: s.solicitudes.titulo,
+        codigo: s.expedientes.codigo,
+      })
+      .from(s.remisiones)
+      .innerJoin(s.expedientes, eq(s.remisiones.expedienteId, s.expedientes.id))
+      .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
+      .where(
+        and(
+          gte(s.remisiones.fechaProgramada, today0),
+          lte(s.remisiones.fechaProgramada, today1),
+          ne(s.remisiones.estatus, "ENTREGADA"),
+          ne(s.remisiones.estatus, "CANCELADA"),
+        ),
+      )
+      .limit(8);
+
+    for (const r of hoy) {
+      items.push({
+        id: `rem-hoy-${r.id}`,
+        title: `🚚 Hoy · ${r.folio} · ${r.codigo}`,
+        href: `/app/comercial/${r.expedienteId}`,
+        owner: "Operaciones",
+        tone: "rose",
+        tip: {
+          que: r.titulo,
+          donde: r.direccionEntrega ?? "Sin dirección",
+          conQuien: r.responsableEntrega ?? r.destinatario,
+          cuando: "Hoy",
+        },
+      });
+    }
+
+    // Próximas 24–48h
+    const manana = await db
+      .select({
+        id: s.remisiones.id,
+        folio: s.remisiones.folio,
+        destinatario: s.remisiones.destinatario,
+        direccionEntrega: s.remisiones.direccionEntrega,
+        responsableEntrega: s.remisiones.responsableEntrega,
+        fechaProgramada: s.remisiones.fechaProgramada,
+        expedienteId: s.expedientes.id,
+        titulo: s.solicitudes.titulo,
+        codigo: s.expedientes.codigo,
+      })
+      .from(s.remisiones)
+      .innerJoin(s.expedientes, eq(s.remisiones.expedienteId, s.expedientes.id))
+      .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
+      .where(
+        and(
+          gte(s.remisiones.fechaProgramada, new Date(today1.getTime() + 1)),
+          lte(s.remisiones.fechaProgramada, tomorrow1),
+          ne(s.remisiones.estatus, "ENTREGADA"),
+          ne(s.remisiones.estatus, "CANCELADA"),
+        ),
+      )
+      .limit(4);
+
+    for (const r of manana) {
+      items.push({
+        id: `rem-man-${r.id}`,
+        title: `Mañana · ${r.folio} · ${r.codigo}`,
+        href: `/app/comercial/${r.expedienteId}`,
+        owner: "Operaciones",
+        tone: "amber",
+        tip: {
+          que: r.titulo,
+          donde: r.direccionEntrega ?? "Sin dirección",
+          conQuien: r.responsableEntrega ?? r.destinatario,
+          cuando: "Mañana",
+        },
+      });
+    }
+  }
+
+  // ── Docs empresa por vencer / vencidos → Laura ────────────────────
+  if (
+    roles.includes("LICITACIONES") ||
+    roles.includes("ADMIN_SISTEMAS") ||
+    roles.includes("DIRECTOR")
+  ) {
+    const docs = await db
+      .select({
+        id: s.documentosEmpresa.id,
+        nombre: s.documentosEmpresa.nombre,
+        fechaVencimiento: s.documentosEmpresa.fechaVencimiento,
+        empresaCodigo: s.empresas.codigo,
+      })
+      .from(s.documentosEmpresa)
+      .innerJoin(s.empresas, eq(s.documentosEmpresa.empresaId, s.empresas.id))
+      .orderBy(asc(s.documentosEmpresa.fechaVencimiento))
+      .limit(40);
+
+    for (const d of docs) {
+      const estado = calcEstadoDoc(d.fechaVencimiento);
+      if (estado !== "POR_VENCER" && estado !== "VENCIDO") continue;
+      items.push({
+        id: `doc-${d.id}`,
+        title: `${estado === "VENCIDO" ? "Doc vencido" : "Doc por vencer"} · ${d.empresaCodigo} · ${d.nombre}`,
+        href: "/app/licitaciones",
+        owner: "Laura",
+        tone: estado === "VENCIDO" ? "rose" : "amber",
+        tip: {
+          que: d.nombre,
+          donde: d.empresaCodigo,
+          conQuien: "Licitaciones",
+          cuando: d.fechaVencimiento
+            ? d.fechaVencimiento.toLocaleDateString("es-MX", {
+                day: "numeric",
+                month: "short",
+              })
+            : undefined,
+        },
+      });
+      if (items.filter((i) => i.id.startsWith("doc-")).length >= 6) break;
+    }
+  }
+
+  // ── Checklist tareas (recotizar / facturar) ────────────────────────
+  {
+    const seeVentas =
+      roles.includes("COMPRAS_VENTAS") ||
+      roles.includes("ADMIN_SISTEMAS") ||
+      roles.includes("DIRECTOR");
+    const seeFinanzas =
+      roles.includes("ADMIN_FINANZAS") ||
+      roles.includes("ADMIN_SISTEMAS") ||
+      roles.includes("DIRECTOR");
+    if (seeVentas || seeFinanzas) {
+      const tareas = await listTareasPendientesGlobal(10);
+      for (const t of tareas) {
+        const isFactura = t.tipo === "FACTURAR";
+        if (isFactura && !seeFinanzas) continue;
+        if (!isFactura && !seeVentas) continue;
+        items.push({
+          id: `tarea-${t.id}`,
+          title: `${t.codigo} · ${t.titulo}`,
+          href: `/app/comercial/${t.expedienteId}`,
+          owner: isFactura ? "Itza" : "Ventas",
+          tone: isFactura ? "mint" : "cyan",
+          tip: {
+            que: t.titulo,
+            donde: t.empresaCodigo,
+            conQuien: isFactura ? "Itza" : "Ventas",
+          },
+        });
+      }
+    }
+  }
 
   if (statuses.size) {
     const rows = await db
@@ -70,7 +253,6 @@ export async function listPendientesForRoles(
       .orderBy(desc(s.expedientes.updatedAt))
       .limit(12);
 
-    // Prefetch remisiones abiertas para tip de entrega
     const remOpen = await db
       .select({
         expedienteId: s.remisiones.expedienteId,
@@ -157,7 +339,7 @@ export async function listPendientesForRoles(
     }
   }
 
-  // Remisiones programadas → Entregas / expediente
+  // Remisiones abiertas (no hoy — ya cubiertas arriba)
   if (
     roles.includes("COMPRAS_VENTAS") ||
     roles.includes("ADMIN_SISTEMAS") ||
@@ -185,6 +367,9 @@ export async function listPendientesForRoles(
       )
       .limit(6);
     for (const r of rems) {
+      // skip if already as hoy/mañana
+      if (items.some((i) => i.id === `rem-hoy-${r.id}` || i.id === `rem-man-${r.id}`))
+        continue;
       items.push({
         id: `rem-${r.id}`,
         title: `${r.folio} · ${r.estatus}${
@@ -210,7 +395,6 @@ export async function listPendientesForRoles(
     }
   }
 
-  // Solicitudes de cambio → Itza / Nesim / Sistemas
   if (
     roles.includes("DIRECTOR") ||
     roles.includes("ADMIN_FINANZAS") ||
@@ -241,7 +425,6 @@ export async function listPendientesForRoles(
     }
   }
 
-  // Recordatorios del usuario (próximas 24h o vencidos)
   if (userId) {
     const soon = new Date(Date.now() + 24 * 3600_000);
     const reminders = await db
@@ -257,10 +440,13 @@ export async function listPendientesForRoles(
       .orderBy(asc(s.botRecordatorios.cuando))
       .limit(6);
     for (const r of reminders) {
+      const meta = (r.meta ?? {}) as { expedienteId?: string };
       items.push({
         id: `remi-${r.id}`,
         title: `⏰ ${r.texto}`,
-        href: "/app",
+        href: meta.expedienteId
+          ? `/app/comercial/${meta.expedienteId}`
+          : "/app",
         owner: "Tu bot",
         tone: "amber",
       });
