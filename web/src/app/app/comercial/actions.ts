@@ -200,6 +200,15 @@ export async function transitionExpedienteAction(
     hacia,
   );
 
+  // Auto: al llegar a ENTREGA, calendizar remisión borrador (+3 días)
+  if (hacia === "ENTREGA") {
+    const { ensureRemisionProgramada } = await import(
+      "@/app/app/actions-modules"
+    );
+    await ensureRemisionProgramada(expedienteId);
+    revalidatePath("/app/entregas");
+  }
+
   revalidatePath(`/app/comercial/${expedienteId}`);
   revalidatePath("/app/comercial");
   revalidatePath("/app/licitaciones");
@@ -397,6 +406,12 @@ export async function setSeleccionComparativoAction(input: {
       updatedAt: new Date(),
     })
     .where(eq(s.expedientes.id, input.expedienteId));
+
+  // Auto: Relaciones partida ↔ proveedor desde selección P1/P2…
+  const { syncRelacionesFromComparativo } = await import(
+    "@/app/app/actions-modules"
+  );
+  await syncRelacionesFromComparativo(input.expedienteId, input.seleccion);
 
   revalidatePath(`/app/comercial/${input.expedienteId}`);
 }

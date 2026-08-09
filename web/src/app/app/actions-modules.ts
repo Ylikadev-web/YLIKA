@@ -1,11 +1,13 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth/config";
 import { getDb } from "@/lib/db";
 import { nextRemisionFolio } from "@/lib/db/queries-modules";
 import * as s from "@/lib/db/schema";
+import type { TipoProveedor } from "@/lib/domain/proveedores";
+import { TIPOS_PROVEEDOR } from "@/lib/domain/proveedores";
 
 async function requireUserId() {
   const session = await auth();
@@ -43,20 +45,259 @@ export async function createClienteAction(formData: FormData) {
   revalidatePath("/app/clientes");
 }
 
+function parseEspecialidades(raw: string): string[] {
+  return raw
+    .split(/[,;|/]/)
+    .map((x) => x.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
 export async function createProveedorAction(formData: FormData) {
   await requireUserId();
   const db = getDb();
   const razonSocial = String(formData.get("razonSocial") || "").trim();
   if (!razonSocial) throw new Error("Razón social requerida");
-  await db.insert(s.proveedores).values({
-    razonSocial,
-    rfc: String(formData.get("rfc") || "") || null,
-    contactoNombre: String(formData.get("contactoNombre") || "") || null,
-    contactoEmail: String(formData.get("contactoEmail") || "") || null,
-    contactoTel: String(formData.get("contactoTel") || "") || null,
-    condicionesPago: String(formData.get("condicionesPago") || "") || null,
-  });
+  const tipoRaw = String(formData.get("tipo") || "MATERIALES");
+  const tipo = (
+    TIPOS_PROVEEDOR.includes(tipoRaw as TipoProveedor)
+      ? tipoRaw
+      : "MATERIALES"
+  ) as TipoProveedor;
+  const especialidades = parseEspecialidades(
+    String(formData.get("especialidades") || ""),
+  );
+  const calificacion = Math.min(
+    5,
+    Math.max(1, Number(formData.get("calificacion") || 3) || 3),
+  );
+  const preferido = formData.get("preferido") === "on";
+  const marcaIds = formData.getAll("marcaIds").map(String).filter(Boolean);
+
+  const [prov] = await db
+    .insert(s.proveedores)
+    .values({
+      razonSocial,
+      rfc: String(formData.get("rfc") || "") || null,
+      aliasCorto: String(formData.get("aliasCorto") || "") || null,
+      contactoNombre: String(formData.get("contactoNombre") || "") || null,
+      contactoEmail: String(formData.get("contactoEmail") || "") || null,
+      contactoTel: String(formData.get("contactoTel") || "") || null,
+      condicionesPago: String(formData.get("condicionesPago") || "") || null,
+      tipo,
+      especialidades,
+      zonaCobertura: String(formData.get("zonaCobertura") || "") || null,
+      preferido,
+      calificacion,
+      notas: String(formData.get("notas") || "") || null,
+    })
+    .returning();
+
+  if (marcaIds.length && prov) {
+    await db.insert(s.proveedorMarcas).values(
+      marcaIds.map((marcaId) => ({
+        proveedorId: prov.id,
+        marcaId,
+      })),
+    );
+  }
+
   revalidatePath("/app/compras");
+}
+
+export async function createMarcaAction(formData: FormData) {
+  await requireUserId();
+  const db = getDb();
+  const nombre = String(formData.get("nombre") || "").trim();
+  if (!nombre) throw new Error("Nombre de marca requerido");
+  const categoria = String(formData.get("categoria") || "GENERAL").trim();
+  const existing = await db
+    .select()
+    .from(s.marcas)
+    .where(eq(s.marcas.nombre, nombre))
+    .limit(1);
+  if (!existing.length) {
+    await db.insert(s.marcas).values({ nombre, categoria });
+  }
+  revalidatePath("/app/compras");
+}
+
+export async function upsertPartidaRelacionAction(formData: FormData) {
+  await requireUserId();
+  const db = getDb();
+  const expedienteId = String(formData.get("expedienteId") || "");
+  const partidaId = String(formData.get("partidaId") || "");
+  const proveedorId = String(formData.get("proveedorId") || "") || null;
+  const marcaId = String(formData.get("marcaId") || "") || null;
+  const marcaTexto = String(formData.get("marcaTexto") || "").trim() || null;
+  const notas = String(formData.get("notas") || "").trim() || null;
+  if (!expedienteId || !partidaId) throw new Error("Faltan datos");
+
+  const [existing] = await db
+    .select()
+    .from(s.partidaRelaciones)
+    .where(
+      and(
+        eq(s.partidaRelaciones.expedienteId, expedienteId),
+        eq(s.partidaRelaciones.partidaId, partidaId),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(s.partidaRelaciones)
+      .set({
+        proveedorId,
+        marcaId,
+        marcaTexto,
+        notas,
+        origen: "MANUAL",
+      })
+      .where(eq(s.partidaRelaciones.id, existing.id));
+  } else {
+    await db.insert(s.partidaRelaciones).values({
+      expedienteId,
+      partidaId,
+      proveedorId,
+      marcaId,
+      marcaTexto,
+      notas,
+      origen: "MANUAL",
+    });
+  }
+
+  revalidatePath(`/app/comercial/${expedienteId}`);
+}
+
+/** Sincroniza Relaciones desde la selección del comparativo (P1/P2…) */
+export async function syncRelacionesFromComparativo(
+  expedienteId: string,
+  seleccion: Record<string, string>,
+) {
+  const db = getDb();
+  const cots = await db
+    .select({
+      id: s.cotizacionesProveedor.id,
+      alias: s.cotizacionesProveedor.aliasEnExpediente,
+      proveedorId: s.cotizacionesProveedor.proveedorId,
+    })
+    .from(s.cotizacionesProveedor)
+    .where(eq(s.cotizacionesProveedor.expedienteId, expedienteId));
+
+  const aliasToProv = Object.fromEntries(
+    cots.map((c) => [c.alias, c.proveedorId]),
+  );
+
+  for (const [partidaId, alias] of Object.entries(seleccion)) {
+    const proveedorId = aliasToProv[alias];
+    if (!proveedorId) continue;
+
+    const [partida] = await db
+      .select()
+      .from(s.partidas)
+      .where(eq(s.partidas.id, partidaId))
+      .limit(1);
+    if (!partida) continue;
+
+    const [existing] = await db
+      .select()
+      .from(s.partidaRelaciones)
+      .where(
+        and(
+          eq(s.partidaRelaciones.expedienteId, expedienteId),
+          eq(s.partidaRelaciones.partidaId, partidaId),
+        ),
+      )
+      .limit(1);
+
+    const payload = {
+      proveedorId,
+      marcaTexto: partida.marcaSolicitada,
+      origen: "COMPARATIVO",
+    };
+
+    if (existing) {
+      await db
+        .update(s.partidaRelaciones)
+        .set(payload)
+        .where(eq(s.partidaRelaciones.id, existing.id));
+    } else {
+      await db.insert(s.partidaRelaciones).values({
+        expedienteId,
+        partidaId,
+        ...payload,
+      });
+    }
+  }
+}
+
+/** Al entrar a ENTREGA: crea remisión programada si no existe */
+export async function ensureRemisionProgramada(expedienteId: string) {
+  const db = getDb();
+  const existing = await db
+    .select()
+    .from(s.remisiones)
+    .where(eq(s.remisiones.expedienteId, expedienteId))
+    .limit(1);
+  if (existing.length) return existing[0];
+
+  const [exp] = await db
+    .select({
+      id: s.expedientes.id,
+      empresaId: s.expedientes.empresaId,
+      codigo: s.empresas.codigo,
+      titulo: s.solicitudes.titulo,
+      clienteNombre: s.clientes.razonSocial,
+      clienteDir: s.clientes.direccion,
+    })
+    .from(s.expedientes)
+    .innerJoin(s.empresas, eq(s.expedientes.empresaId, s.empresas.id))
+    .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
+    .leftJoin(s.clientes, eq(s.solicitudes.clienteId, s.clientes.id))
+    .where(eq(s.expedientes.id, expedienteId))
+    .limit(1);
+  if (!exp) return null;
+
+  const folio = await nextRemisionFolio(exp.codigo);
+  const programada = new Date();
+  programada.setDate(programada.getDate() + 3);
+  programada.setHours(10, 0, 0, 0);
+
+  const [rem] = await db
+    .insert(s.remisiones)
+    .values({
+      expedienteId,
+      empresaId: exp.empresaId,
+      folio,
+      destinatario: exp.clienteNombre ?? "Destinatario por confirmar",
+      direccionEntrega: exp.clienteDir ?? null,
+      fechaProgramada: programada,
+      responsableEntrega: "Operaciones",
+      estatus: "BORRADOR",
+      notas: `Auto-programada al pasar a Entrega · ${exp.titulo}`,
+    })
+    .returning();
+
+  const partidas = await db
+    .select()
+    .from(s.partidas)
+    .where(eq(s.partidas.expedienteId, expedienteId));
+  if (partidas.length && rem) {
+    await db.insert(s.remisionPartidas).values(
+      partidas.map((p) => ({
+        remisionId: rem.id,
+        partidaId: p.id,
+        descripcion: p.descripcion,
+        cantidad: p.cantidad,
+        unidad: p.unidad,
+      })),
+    );
+  }
+
+  revalidatePath("/app/entregas");
+  revalidatePath("/app");
+  return rem;
 }
 
 export async function createRemisionAction(formData: FormData) {
@@ -66,6 +307,9 @@ export async function createRemisionAction(formData: FormData) {
   const destinatario = String(formData.get("destinatario") || "").trim();
   const direccion = String(formData.get("direccionEntrega") || "").trim();
   const notas = String(formData.get("notas") || "") || null;
+  const responsableEntrega =
+    String(formData.get("responsableEntrega") || "").trim() || null;
+  const fechaProgramadaRaw = String(formData.get("fechaProgramada") || "");
   if (!expedienteId || !destinatario) throw new Error("Faltan datos");
 
   const [exp] = await db
@@ -81,6 +325,10 @@ export async function createRemisionAction(formData: FormData) {
   if (!exp) throw new Error("Expediente no encontrado");
 
   const folio = await nextRemisionFolio(exp.codigo);
+  const fechaProgramada = fechaProgramadaRaw
+    ? new Date(`${fechaProgramadaRaw}T10:00:00`)
+    : new Date(Date.now() + 3 * 86400_000);
+
   const [rem] = await db
     .insert(s.remisiones)
     .values({
@@ -89,7 +337,9 @@ export async function createRemisionAction(formData: FormData) {
       folio,
       destinatario,
       direccionEntrega: direccion || null,
-      fechaEntrega: new Date(),
+      fechaEntrega: null,
+      fechaProgramada,
+      responsableEntrega,
       estatus: "EMITIDA",
       notas,
       creadoPor: userId,
@@ -121,12 +371,11 @@ export async function createRemisionAction(formData: FormData) {
   await db.insert(s.bitacora).values({
     expedienteId,
     userId,
-    accion: `Remisión ${folio} emitida`,
+    accion: `Remisión ${folio} emitida · programada ${fechaProgramada.toLocaleDateString("es-MX")}`,
     aEstatus: "ENTREGA",
-    detalle: { remisionId: rem.id, folio },
+    detalle: { remisionId: rem.id, folio, fechaProgramada },
   });
 
-  // Auto doc registro
   await db.insert(s.documentos).values({
     expedienteId,
     empresaId: exp.empresaId,
@@ -139,7 +388,34 @@ export async function createRemisionAction(formData: FormData) {
   revalidatePath("/app/entregas");
   revalidatePath("/app/documentos");
   revalidatePath("/app/tesoreria");
+  revalidatePath("/app");
   revalidatePath(`/app/comercial/${expedienteId}`);
+}
+
+export async function updateRemisionProgramacionAction(formData: FormData) {
+  await requireUserId();
+  const db = getDb();
+  const remisionId = String(formData.get("remisionId") || "");
+  const fechaProgramadaRaw = String(formData.get("fechaProgramada") || "");
+  const responsableEntrega =
+    String(formData.get("responsableEntrega") || "").trim() || null;
+  const direccionEntrega =
+    String(formData.get("direccionEntrega") || "").trim() || null;
+  if (!remisionId) throw new Error("Remisión requerida");
+
+  await db
+    .update(s.remisiones)
+    .set({
+      fechaProgramada: fechaProgramadaRaw
+        ? new Date(`${fechaProgramadaRaw}T10:00:00`)
+        : null,
+      responsableEntrega,
+      direccionEntrega,
+    })
+    .where(eq(s.remisiones.id, remisionId));
+
+  revalidatePath("/app/entregas");
+  revalidatePath("/app");
 }
 
 export async function marcarRemisionEntregadaAction(formData: FormData) {
@@ -158,6 +434,7 @@ export async function marcarRemisionEntregadaAction(formData: FormData) {
     .update(s.remisiones)
     .set({
       estatus: "ENTREGADA",
+      fechaEntrega: new Date(),
       recibidoPorFinanzasId: userId,
     })
     .where(eq(s.remisiones.id, remisionId));
@@ -177,6 +454,8 @@ export async function marcarRemisionEntregadaAction(formData: FormData) {
 
   revalidatePath("/app/entregas");
   revalidatePath("/app/tesoreria");
+  revalidatePath("/app");
+  revalidatePath(`/app/comercial/${rem.expedienteId}`);
 }
 
 export async function updateBolsaUrlAction(formData: FormData) {

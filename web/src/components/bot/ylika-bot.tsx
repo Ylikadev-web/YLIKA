@@ -162,7 +162,7 @@ export function YlikaBot({
                     </li>
                   ) : (
                     items.map((item) => (
-                      <li key={item.id}>
+                      <li key={item.id} className="group/pend relative">
                         <Link
                           href={item.href}
                           onClick={() => setOpen(false)}
@@ -187,6 +187,30 @@ export function YlikaBot({
                             </span>
                           </span>
                         </Link>
+                        {item.tip && (
+                          <div className="pointer-events-none absolute left-2 right-2 top-full z-40 mt-1 hidden rounded-2xl border border-[var(--glass-border)] bg-[color-mix(in_srgb,var(--glass)_96%,transparent)] p-2.5 shadow-xl backdrop-blur-xl group-hover/pend:block">
+                            {item.tip.que && (
+                              <p className="text-[11px] font-medium leading-snug">
+                                {item.tip.que}
+                              </p>
+                            )}
+                            {item.tip.donde && (
+                              <p className="mt-1 text-[10px] text-[var(--text-muted)]">
+                                Dónde · {item.tip.donde}
+                              </p>
+                            )}
+                            {item.tip.conQuien && (
+                              <p className="text-[10px] text-[var(--text-muted)]">
+                                Con · {item.tip.conQuien}
+                              </p>
+                            )}
+                            {item.tip.cuando && (
+                              <p className="text-[10px] text-[var(--accent)]">
+                                {item.tip.cuando}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </li>
                     ))
                   )}

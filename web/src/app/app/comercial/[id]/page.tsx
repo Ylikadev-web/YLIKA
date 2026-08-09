@@ -7,10 +7,16 @@ import { Glass } from "@/components/ui/glass";
 import { ComparativoClient } from "@/app/app/comercial/[id]/comparativo-client";
 import { ExcelImportPanel } from "@/components/comercial/excel-import";
 import { EditPanel } from "@/components/comercial/edit-panel";
+import { RelacionesPanel } from "@/components/comercial/relaciones-panel";
 import { ProcessTree } from "@/components/comercial/process-tree";
 import { WorkflowPanel } from "@/components/comercial/workflow-panel";
 import { listCambiosPendientesExpediente } from "@/app/app/comercial/edit-actions";
 import { getExpedienteById } from "@/lib/db/queries";
+import {
+  listMarcas,
+  listPartidaRelaciones,
+  listProveedores,
+} from "@/lib/db/queries-modules";
 import { ESTATUS_LABEL, type EstatusExpediente } from "@/lib/domain/workflow";
 import type { SelectionMode } from "@/lib/quotes/comparativo";
 
@@ -22,11 +28,15 @@ export default async function ExpedientePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [exp, session, cambios] = await Promise.all([
-    getExpedienteById(id),
-    auth(),
-    listCambiosPendientesExpediente(id),
-  ]);
+  const [exp, session, cambios, relaciones, proveedores, marcas] =
+    await Promise.all([
+      getExpedienteById(id),
+      auth(),
+      listCambiosPendientesExpediente(id),
+      listPartidaRelaciones(id),
+      listProveedores(),
+      listMarcas(),
+    ]);
   if (!exp) notFound();
 
   const roles = (session?.user as { roles?: string[] } | undefined)?.roles ?? [];
@@ -85,6 +95,14 @@ export default async function ExpedientePage({
       />
 
       <ExcelImportPanel expedienteId={exp.id} nextAlias={nextAlias} />
+
+      <RelacionesPanel
+        expedienteId={exp.id}
+        partidas={exp.partidas}
+        relaciones={relaciones}
+        proveedores={proveedores}
+        marcas={marcas}
+      />
 
       <ComparativoClient
         expedienteId={exp.id}

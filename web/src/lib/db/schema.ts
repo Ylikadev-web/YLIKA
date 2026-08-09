@@ -189,6 +189,15 @@ export const clientes = pgTable("clientes", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+export const tipoProveedorEnum = pgEnum("tipo_proveedor", [
+  "MATERIALES",
+  "EQUIPOS",
+  "SERVICIOS",
+  "OBRA",
+  "TRANSPORTE",
+  "MIXTO",
+]);
+
 export const proveedores = pgTable("proveedores", {
   id: uuid("id").defaultRandom().primaryKey(),
   razonSocial: text("razon_social").notNull(),
@@ -198,9 +207,36 @@ export const proveedores = pgTable("proveedores", {
   contactoEmail: text("contacto_email"),
   contactoTel: text("contacto_tel"),
   condicionesPago: text("condiciones_pago"),
+  tipo: tipoProveedorEnum("tipo").notNull().default("MATERIALES"),
+  especialidades: text("especialidades").array().notNull().default([]),
+  zonaCobertura: text("zona_cobertura"),
+  preferido: boolean("preferido").notNull().default(false),
+  calificacion: integer("calificacion").notNull().default(3),
+  notas: text("notas"),
   activo: boolean("activo").notNull().default(true),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
+
+export const marcas = pgTable("marcas", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  nombre: text("nombre").notNull().unique(),
+  categoria: text("categoria").notNull().default("GENERAL"),
+  activa: boolean("activa").notNull().default(true),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
+export const proveedorMarcas = pgTable(
+  "proveedor_marcas",
+  {
+    proveedorId: uuid("proveedor_id")
+      .notNull()
+      .references(() => proveedores.id, { onDelete: "cascade" }),
+    marcaId: uuid("marca_id")
+      .notNull()
+      .references(() => marcas.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.proveedorId, t.marcaId] })],
+);
 
 export const documentosEmpresa = pgTable("documentos_empresa", {
   id: uuid("id").defaultRandom().primaryKey(),
@@ -287,6 +323,31 @@ export const partidas = pgTable(
     notas: text("notas"),
   },
   (t) => [uniqueIndex("partidas_exp_num").on(t.expedienteId, t.numero)],
+);
+
+/** Relación partida ↔ proveedor/marca dentro de un expediente */
+export const partidaRelaciones = pgTable(
+  "partida_relaciones",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    expedienteId: uuid("expediente_id")
+      .notNull()
+      .references(() => expedientes.id, { onDelete: "cascade" }),
+    partidaId: uuid("partida_id")
+      .notNull()
+      .references(() => partidas.id, { onDelete: "cascade" }),
+    proveedorId: uuid("proveedor_id").references(() => proveedores.id, {
+      onDelete: "set null",
+    }),
+    marcaId: uuid("marca_id").references(() => marcas.id, {
+      onDelete: "set null",
+    }),
+    marcaTexto: text("marca_texto"),
+    origen: text("origen").notNull().default("MANUAL"), // MANUAL | COMPARATIVO | IMPORT
+    notas: text("notas"),
+    createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("partida_rel_unique").on(t.expedienteId, t.partidaId)],
 );
 
 export const cotizacionesProveedor = pgTable(
@@ -382,6 +443,8 @@ export const remisiones = pgTable("remisiones", {
   destinatario: text("destinatario").notNull(),
   direccionEntrega: text("direccion_entrega"),
   fechaEntrega: timestamp("fecha_entrega", { mode: "date" }),
+  fechaProgramada: timestamp("fecha_programada", { mode: "date" }),
+  responsableEntrega: text("responsable_entrega"),
   estatus: text("estatus").notNull().default("BORRADOR"),
   notas: text("notas"),
   creadoPor: uuid("creado_por").references(() => users.id),

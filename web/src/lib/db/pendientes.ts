@@ -10,6 +10,13 @@ export type PendienteItem = {
   href: string;
   owner: string;
   tone: "amber" | "cyan" | "rose" | "mint";
+  /** Hover preview — entregas / expediente */
+  tip?: {
+    que?: string;
+    donde?: string;
+    conQuien?: string;
+    cuando?: string;
+  };
 };
 
 const ROLE_STATUSES: Record<string, EstatusExpediente[]> = {
@@ -53,13 +60,31 @@ export async function listPendientesForRoles(
         estatus: s.expedientes.estatus,
         titulo: s.solicitudes.titulo,
         empresa: s.empresas.codigo,
+        clienteNombre: s.clientes.razonSocial,
       })
       .from(s.expedientes)
       .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
       .innerJoin(s.empresas, eq(s.expedientes.empresaId, s.empresas.id))
+      .leftJoin(s.clientes, eq(s.solicitudes.clienteId, s.clientes.id))
       .where(inArray(s.expedientes.estatus, [...statuses]))
       .orderBy(desc(s.expedientes.updatedAt))
       .limit(12);
+
+    // Prefetch remisiones abiertas para tip de entrega
+    const remOpen = await db
+      .select({
+        expedienteId: s.remisiones.expedienteId,
+        folio: s.remisiones.folio,
+        destinatario: s.remisiones.destinatario,
+        direccionEntrega: s.remisiones.direccionEntrega,
+        responsableEntrega: s.remisiones.responsableEntrega,
+        fechaProgramada: s.remisiones.fechaProgramada,
+      })
+      .from(s.remisiones)
+      .where(
+        inArray(s.remisiones.estatus, ["BORRADOR", "EMITIDA", "EN_TRANSITO"]),
+      );
+    const remByExp = new Map(remOpen.map((r) => [r.expedienteId, r]));
 
     for (const r of rows) {
       const owner =
@@ -76,6 +101,27 @@ export async function listPendientesForRoles(
         r.estatus === "ENVIADA"
           ? "/app/propuestas"
           : `/app/comercial/${r.id}`;
+
+      const rem = remByExp.get(r.id);
+      const tip =
+        r.estatus === "ENTREGA" || r.estatus === "COMPRA" || rem
+          ? {
+              que: r.titulo,
+              donde: rem?.direccionEntrega ?? "Por confirmar",
+              conQuien:
+                rem?.responsableEntrega ??
+                rem?.destinatario ??
+                r.clienteNombre ??
+                "—",
+              cuando: rem?.fechaProgramada
+                ? rem.fechaProgramada.toLocaleDateString("es-MX", {
+                    day: "numeric",
+                    month: "short",
+                  })
+                : undefined,
+            }
+          : undefined;
+
       items.push({
         id: `exp-${r.id}`,
         title: `${r.codigo} · ${ESTATUS_LABEL[r.estatus as EstatusExpediente] ?? r.estatus}`,
@@ -89,6 +135,7 @@ export async function listPendientesForRoles(
               : owner === "Nesim"
                 ? "rose"
                 : "cyan",
+        tip,
       });
     }
   }
@@ -110,7 +157,7 @@ export async function listPendientesForRoles(
     }
   }
 
-  // Remisiones emitidas → Entregas
+  // Remisiones programadas → Entregas / expediente
   if (
     roles.includes("COMPRAS_VENTAS") ||
     roles.includes("ADMIN_SISTEMAS") ||
@@ -121,8 +168,16 @@ export async function listPendientesForRoles(
         id: s.remisiones.id,
         folio: s.remisiones.folio,
         estatus: s.remisiones.estatus,
+        destinatario: s.remisiones.destinatario,
+        direccionEntrega: s.remisiones.direccionEntrega,
+        responsableEntrega: s.remisiones.responsableEntrega,
+        fechaProgramada: s.remisiones.fechaProgramada,
+        expedienteId: s.expedientes.id,
+        titulo: s.solicitudes.titulo,
       })
       .from(s.remisiones)
+      .innerJoin(s.expedientes, eq(s.remisiones.expedienteId, s.expedientes.id))
+      .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
       .where(
         and(
           inArray(s.remisiones.estatus, ["EMITIDA", "EN_TRANSITO", "BORRADOR"]),
@@ -132,10 +187,25 @@ export async function listPendientesForRoles(
     for (const r of rems) {
       items.push({
         id: `rem-${r.id}`,
-        title: `${r.folio} · ${r.estatus}`,
-        href: "/app/entregas",
+        title: `${r.folio} · ${r.estatus}${
+          r.fechaProgramada
+            ? ` · ${r.fechaProgramada.toLocaleDateString("es-MX", { day: "numeric", month: "short" })}`
+            : ""
+        }`,
+        href: `/app/comercial/${r.expedienteId}`,
         owner: "Operaciones",
         tone: "cyan",
+        tip: {
+          que: r.titulo,
+          donde: r.direccionEntrega ?? "Sin dirección",
+          conQuien: r.responsableEntrega ?? r.destinatario,
+          cuando: r.fechaProgramada
+            ? r.fechaProgramada.toLocaleDateString("es-MX", {
+                day: "numeric",
+                month: "short",
+              })
+            : undefined,
+        },
       });
     }
   }
