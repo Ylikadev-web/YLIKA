@@ -1,6 +1,8 @@
 export type NavStyle = "classic" | "carousel" | "dock" | "rail";
 export type NavPosition = "left" | "right" | "bottom" | "top";
 export type GlassBlur = "soft" | "strong" | "max";
+/** Cómo navegar apartados dentro de un expediente */
+export type ExpedienteNav = "tabs" | "rail" | "both";
 
 export type UiPrefs = {
   navStyle: NavStyle;
@@ -9,6 +11,7 @@ export type UiPrefs = {
   pendingGlow: boolean;
   floatOrbs: boolean;
   reduceTransparency: boolean;
+  expedienteNav: ExpedienteNav;
 };
 
 export const DEFAULT_UI_PREFS: UiPrefs = {
@@ -18,6 +21,7 @@ export const DEFAULT_UI_PREFS: UiPrefs = {
   pendingGlow: true,
   floatOrbs: true,
   reduceTransparency: false,
+  expedienteNav: "tabs",
 };
 
 export const UI_PREFS_STORAGE_KEY = "ylika-ui-prefs";
@@ -59,6 +63,28 @@ export const NAV_POSITION_OPTIONS: {
   { id: "top", name: "Superior" },
 ];
 
+export const EXPEDIENTE_NAV_OPTIONS: {
+  id: ExpedienteNav;
+  name: string;
+  tagline: string;
+}[] = [
+  {
+    id: "tabs",
+    name: "Pestañas",
+    tagline: "Barra horizontal tipo navegador (recomendado).",
+  },
+  {
+    id: "rail",
+    name: "Lateral",
+    tagline: "Lista vertical tipo explorador de archivos.",
+  },
+  {
+    id: "both",
+    name: "Ambos",
+    tagline: "Pestañas arriba + rail a la izquierda.",
+  },
+];
+
 export function parseUiPrefs(raw: unknown): UiPrefs {
   if (!raw || typeof raw !== "object") return { ...DEFAULT_UI_PREFS };
   const o = raw as Partial<UiPrefs>;
@@ -88,5 +114,10 @@ export function parseUiPrefs(raw: unknown): UiPrefs {
       typeof o.reduceTransparency === "boolean"
         ? o.reduceTransparency
         : DEFAULT_UI_PREFS.reduceTransparency,
+    expedienteNav: (["tabs", "rail", "both"] as ExpedienteNav[]).includes(
+      o.expedienteNav as ExpedienteNav,
+    )
+      ? (o.expedienteNav as ExpedienteNav)
+      : DEFAULT_UI_PREFS.expedienteNav,
   };
 }

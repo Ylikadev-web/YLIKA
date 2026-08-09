@@ -42,6 +42,10 @@ type Marca = {
   nombre: string;
 };
 
+/**
+ * Objetivo del submódulo: asignar proveedor/marca rápido por partida.
+ * Layout denso (barra de partidas + fila de selects) — sin bloques vacíos.
+ */
 export function RelacionesPanel({
   expedienteId,
   partidas,
@@ -63,30 +67,56 @@ export function RelacionesPanel({
 
   const active = partidas.find((p) => p.id === activeId) ?? partidas[0];
   const rel = active ? byPartida.get(active.id) : undefined;
+  const idx = partidas.findIndex((p) => p.id === active?.id);
+  const assignedCount = partidas.filter((p) => byPartida.get(p.id)?.proveedorId)
+    .length;
 
   if (partidas.length === 0) {
     return (
-      <Glass className="overflow-hidden">
-        <div className="px-5 py-6 text-sm text-[var(--text-muted)]">
-          Sin partidas todavía. Cárgalas en Importar o Edición.
-        </div>
+      <Glass className="px-4 py-5 text-sm text-[var(--text-muted)]">
+        Sin partidas. Cárgalas en Importar o Edición.
       </Glass>
     );
   }
 
   return (
     <Glass className="overflow-hidden">
-      <div className="border-b border-[var(--glass-border)] px-5 py-4">
-        <h3 className="display text-lg font-semibold">Relaciones</h3>
-        <p className="mt-1 text-xs text-[var(--text-muted)]">
-          Una partida a la vez. Se llenan solos al elegir en Comparativo.
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--glass-border)] px-3 py-2.5">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold">Relaciones</h3>
+          <p className="text-[11px] text-[var(--text-muted)]">
+            Asigna proveedor y marca · {assignedCount}/{partidas.length} listas
+          </p>
+        </div>
+        <div className="flex items-center gap-1 text-xs">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={idx <= 0}
+            onClick={() => setActiveId(partidas[idx - 1]?.id ?? "")}
+          >
+            ←
+          </Button>
+          <span className="tabular-nums text-[var(--text-muted)]">
+            {idx + 1}/{partidas.length}
+          </span>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={idx < 0 || idx >= partidas.length - 1}
+            onClick={() => setActiveId(partidas[idx + 1]?.id ?? "")}
+          >
+            →
+          </Button>
+        </div>
       </div>
 
-      {/* Pestañas por partida */}
+      {/* Chips densos de partida */}
       <div
         role="tablist"
-        className="flex gap-0.5 overflow-x-auto border-b border-[var(--glass-border)] px-2 py-1.5"
+        className="flex gap-1 overflow-x-auto border-b border-[var(--glass-border)] px-2 py-1.5"
       >
         {partidas.map((p) => {
           const r = byPartida.get(p.id);
@@ -98,22 +128,22 @@ export function RelacionesPanel({
               type="button"
               role="tab"
               aria-selected={isOn}
+              title={p.descripcion}
               onClick={() => setActiveId(p.id)}
               className={cn(
-                "relative flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium transition",
+                "flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium transition",
                 isOn
-                  ? "bg-[color-mix(in_srgb,var(--accent)_22%,transparent)] text-[var(--text)]"
+                  ? "bg-[color-mix(in_srgb,var(--accent)_24%,transparent)] text-[var(--text)]"
                   : "text-[var(--text-muted)] hover:bg-[color-mix(in_srgb,var(--text)_6%,transparent)]",
               )}
             >
               <span className="text-[var(--accent)]">#{p.numero}</span>
-              <span className="max-w-[140px] truncate">{p.descripcion}</span>
+              <span className="max-w-[88px] truncate">{p.descripcion}</span>
               <span
                 className={cn(
                   "h-1.5 w-1.5 rounded-full",
                   assigned ? "bg-[var(--accent)]" : "bg-[var(--text-muted)]",
                 )}
-                title={assigned ? "Asignada" : "Sin asignar"}
               />
             </button>
           );
@@ -121,46 +151,34 @@ export function RelacionesPanel({
       </div>
 
       {active && (
-        <div className="px-5 py-5">
-          <div className="mb-4">
-            <p className="text-xs font-semibold text-[var(--accent)]">
-              Partida #{active.numero}
-            </p>
-            <p className="mt-1 text-sm font-medium">{active.descripcion}</p>
+        <form
+          action={upsertPartidaRelacionAction}
+          className="space-y-2 px-3 py-3"
+        >
+          <input type="hidden" name="expedienteId" value={expedienteId} />
+          <input type="hidden" name="partidaId" value={active.id} />
+
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-xs font-semibold text-[var(--accent)]">
+              #{active.numero}
+            </span>
+            <span className="text-sm font-medium">{active.descripcion}</span>
             {rel?.origen === "COMPARATIVO" && (
-              <p className="mt-1 text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                auto · comparativo
-              </p>
-            )}
-            {rel?.proveedorNombre && (
-              <p className="mt-2 text-xs text-[var(--text-muted)]">
-                Actual:{" "}
-                <span className="text-[var(--text)]">{rel.proveedorNombre}</span>
-                {rel.proveedorTipo
-                  ? ` · ${TIPO_PROVEEDOR_LABEL[rel.proveedorTipo as TipoProveedor] ?? rel.proveedorTipo}`
-                  : ""}
-                {rel.marcaNombre || rel.marcaTexto
-                  ? ` · marca ${rel.marcaNombre ?? rel.marcaTexto}`
-                  : active.marcaSolicitada
-                    ? ` · solicita ${active.marcaSolicitada}`
-                    : ""}
-              </p>
+              <span className="text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                auto
+              </span>
             )}
           </div>
 
-          <form
-            action={upsertPartidaRelacionAction}
-            className="grid gap-3 md:grid-cols-2"
-          >
-            <input type="hidden" name="expedienteId" value={expedienteId} />
-            <input type="hidden" name="partidaId" value={active.id} />
-            <label className="text-xs md:col-span-2">
+          {/* Una sola fila de controles en desktop */}
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)_auto]">
+            <label className="text-[11px] text-[var(--text-muted)]">
               Proveedor
               <select
                 key={`prov-${active.id}-${rel?.proveedorId ?? ""}`}
                 name="proveedorId"
                 defaultValue={rel?.proveedorId ?? ""}
-                className="mt-1 w-full rounded-2xl border border-[var(--glass-border)] bg-transparent px-3 py-2 text-sm"
+                className="mt-0.5 w-full rounded-xl border border-[var(--glass-border)] bg-transparent px-2.5 py-1.5 text-sm"
               >
                 <option value="">— Sin asignar —</option>
                 {proveedores.map((pr) => (
@@ -172,13 +190,13 @@ export function RelacionesPanel({
                 ))}
               </select>
             </label>
-            <label className="text-xs">
+            <label className="text-[11px] text-[var(--text-muted)]">
               Marca catálogo
               <select
                 key={`marca-${active.id}-${rel?.marcaId ?? ""}`}
                 name="marcaId"
                 defaultValue={rel?.marcaId ?? ""}
-                className="mt-1 w-full rounded-2xl border border-[var(--glass-border)] bg-transparent px-3 py-2 text-sm"
+                className="mt-0.5 w-full rounded-xl border border-[var(--glass-border)] bg-transparent px-2.5 py-1.5 text-sm"
               >
                 <option value="">—</option>
                 {marcas.map((m) => (
@@ -188,54 +206,23 @@ export function RelacionesPanel({
                 ))}
               </select>
             </label>
-            <label className="text-xs">
+            <label className="text-[11px] text-[var(--text-muted)]">
               Marca texto
               <input
                 key={`texto-${active.id}`}
                 name="marcaTexto"
                 defaultValue={rel?.marcaTexto ?? active.marcaSolicitada ?? ""}
-                placeholder="ej. Honeywell"
-                className="mt-1 w-full rounded-2xl border border-[var(--glass-border)] bg-transparent px-3 py-2 text-sm"
+                placeholder="Honeywell…"
+                className="mt-0.5 w-full rounded-xl border border-[var(--glass-border)] bg-transparent px-2.5 py-1.5 text-sm"
               />
             </label>
-            <div className="flex flex-wrap items-center gap-2 md:col-span-2">
-              <Button type="submit" size="sm">
-                Guardar relación
+            <div className="flex items-end">
+              <Button type="submit" size="sm" className="w-full sm:w-auto">
+                Guardar
               </Button>
-              <div className="flex gap-1">
-                {partidas.map((p, idx) => {
-                  if (p.id !== active.id) return null;
-                  const prev = partidas[idx - 1];
-                  const next = partidas[idx + 1];
-                  return (
-                    <span key="nav" className="flex gap-1">
-                      {prev && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setActiveId(prev.id)}
-                        >
-                          ← #{prev.numero}
-                        </Button>
-                      )}
-                      {next && (
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setActiveId(next.id)}
-                        >
-                          #{next.numero} →
-                        </Button>
-                      )}
-                    </span>
-                  );
-                })}
-              </div>
             </div>
-          </form>
-        </div>
+          </div>
+        </form>
       )}
     </Glass>
   );

@@ -346,51 +346,60 @@ body {
   color: var(--text);
 }
 
-/* Cotización final — impresión / PDF (sin chrome de la app) */
+/* Cotización final — documento carta profesional */
+.cotizacion-print {
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+}
+
+.cotizacion-print .quote-doc {
+  overflow: hidden;
+  border-radius: 4px;
+}
+
 @media print {
+  @page {
+    size: letter;
+    margin: 12mm;
+  }
+
   body {
     background: white !important;
-    color: #111 !important;
+    color: #0f172a !important;
   }
 
   .print\:hidden,
   [data-print-hide],
-  aside,
-  nav,
   .ylika-bot,
   .module-nav,
   .float-orbs {
     display: none !important;
   }
 
-  .cotizacion-print,
-  .print-sheet {
+  .cotizacion-print {
     background: white !important;
-    color: #111 !important;
-    box-shadow: none !important;
+    min-height: 0 !important;
   }
 
-  .print-sheet {
+  .cotizacion-print .quote-doc,
+  .cotizacion-print .print-sheet {
     max-width: none !important;
-    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
   }
 
   .cotizacion-print a {
     color: inherit !important;
     text-decoration: none !important;
   }
-}
 
-.cotizacion-print .print-sheet {
-  background: color-mix(in srgb, var(--glass) 55%, transparent);
-  border: 1px solid var(--glass-border);
-  border-radius: 28px;
-  margin-bottom: 2rem;
-  padding: 2rem 1.75rem;
-}
+  .quote-band {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 
-@media (min-width: 640px) {
-  .cotizacion-print .print-sheet {
-    padding: 2.5rem;
+  thead tr {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 }

@@ -17,8 +17,10 @@ import { Glass } from "@/components/ui/glass";
 import { useUiPrefs } from "@/components/providers/ui-prefs-provider";
 import { THEMES, type ThemeId } from "@/lib/themes";
 import {
+  EXPEDIENTE_NAV_OPTIONS,
   NAV_POSITION_OPTIONS,
   NAV_STYLE_OPTIONS,
+  type ExpedienteNav,
   type GlassBlur,
   type NavPosition,
   type NavStyle,
@@ -208,6 +210,33 @@ export default function ConfiguracionPage() {
               Clásica usa izquierda/derecha. Para superior/inferior elige Carrusel o Dock.
             </p>
           ) : null}
+
+          <p className="mt-5 mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+            Navegación dentro del expediente
+          </p>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {EXPEDIENTE_NAV_OPTIONS.map((opt) => {
+              const active = mounted && prefs.expedienteNav === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() =>
+                    setPrefs({ expedienteNav: opt.id as ExpedienteNav })
+                  }
+                  className={cn(
+                    "glass-thin rounded-2xl p-3 text-left transition",
+                    active && "ring-2 ring-[var(--accent)]",
+                  )}
+                >
+                  <p className="text-sm font-semibold">{opt.name}</p>
+                  <p className="mt-1 text-[11px] text-[var(--text-muted)]">
+                    {opt.tagline}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
         </Glass>
 
         <Glass className="p-6">
