@@ -105,7 +105,7 @@ export async function listPendientesForRoles(
       items.push({
         id: `rem-hoy-${r.id}`,
         title: `🚚 Hoy · ${r.folio} · ${r.codigo}`,
-        href: `/app/comercial/${r.expedienteId}`,
+        href: `/app/comercial/${r.expedienteId}?tab=historial`,
         owner: "Operaciones",
         tone: "rose",
         tip: {
@@ -147,7 +147,7 @@ export async function listPendientesForRoles(
       items.push({
         id: `rem-man-${r.id}`,
         title: `Mañana · ${r.folio} · ${r.codigo}`,
-        href: `/app/comercial/${r.expedienteId}`,
+        href: `/app/comercial/${r.expedienteId}?tab=historial`,
         owner: "Operaciones",
         tone: "amber",
         tip: {
@@ -222,7 +222,7 @@ export async function listPendientesForRoles(
         items.push({
           id: `tarea-${t.id}`,
           title: `${t.codigo} · ${t.titulo}`,
-          href: `/app/comercial/${t.expedienteId}`,
+          href: `/app/comercial/${t.expedienteId}?tab=checklist`,
           owner: isFactura ? "Itza" : "Ventas",
           tone: isFactura ? "mint" : "cyan",
           tip: {
