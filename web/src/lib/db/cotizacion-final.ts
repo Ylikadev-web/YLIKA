@@ -1,4 +1,4 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import * as s from "@/lib/db/schema";
 import type { FinalLine } from "@/lib/quotes/comparativo";

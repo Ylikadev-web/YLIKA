@@ -20,7 +20,7 @@
 | 8 | Vercel deploy + Tunnel/dominio | ✅ https://ylika-ops.vercel.app |
 | 9 | Módulo Laura: docs empresa + caducidad + luz verde | ✅ DB + UI (falta upload Storage) |
 | 10 | Parse PDF/Word/imagen (Document AI / Textract) + confirmación humana | ⬜ |
-| 11 | Generar PDF cotización final (sin mostrar %) | ⬜ |
+| 11 | Generar PDF cotización final (sin mostrar %) | ✅ vista imprimible + link Historial/Comparativo |
 | 12 | Remisiones + folio + handoff Itza | ✅ UI + actions Neon (marca entregada → cobranza) |
 | 13 | **Bolsa nativa** (réplica Administración de Bolsa en Neon) | ✅ propias / general / asignadas / aprobación / préstamos |
 | 14 | Módulos nav: Compras, Clientes, Entregas, Proyectos, Obra, Docs, Bolsa | ✅ |
