@@ -499,6 +499,8 @@ export async function generarCotizacionFinalAction(input: {
         )[0]?.id
       : user.id;
 
+  const archivoPath = `/app/comercial/${input.expedienteId}/cotizacion/${nextVersion}`;
+
   const [final] = await db
     .insert(s.cotizacionesFinales)
     .values({
@@ -507,6 +509,7 @@ export async function generarCotizacionFinalAction(input: {
       markupPctAplicado: String(input.markupPct),
       criterio: input.criterio,
       generadoPor: userId ?? null,
+      archivoPath,
       payload: { lineas: lines },
     })
     .returning();
@@ -521,18 +524,45 @@ export async function generarCotizacionFinalAction(input: {
     })
     .where(eq(s.expedientes.id, input.expedienteId));
 
+  const [expMeta] = await db
+    .select({
+      empresaId: s.expedientes.empresaId,
+      codigo: s.expedientes.codigo,
+    })
+    .from(s.expedientes)
+    .where(eq(s.expedientes.id, input.expedienteId))
+    .limit(1);
+
+  if (expMeta) {
+    await db.insert(s.documentos).values({
+      expedienteId: input.expedienteId,
+      empresaId: expMeta.empresaId,
+      tipo: "COTIZACION_FINAL",
+      nombre: `${expMeta.codigo}-cotizacion-v${nextVersion}.pdf`,
+      storagePath: archivoPath,
+      uploadedBy: userId ?? null,
+    });
+  }
+
   await logBitacora(
     input.expedienteId,
     userId,
     `Cotización final v${nextVersion} generada`,
     "COMPARATIVO",
     "COTIZACION_FINAL",
-    { version: nextVersion, markupPct: input.markupPct },
+    { version: nextVersion, markupPct: input.markupPct, archivoPath },
   );
 
   revalidatePath(`/app/comercial/${input.expedienteId}`);
+  revalidatePath(`/app/comercial/${input.expedienteId}/cotizacion/${nextVersion}`);
   revalidatePath("/app/comercial");
-  return { id: final.id, version: nextVersion, lineas: lines };
+  revalidatePath("/app/documentos");
+  return {
+    id: final.id,
+    version: nextVersion,
+    lineas: lines,
+    printUrl: archivoPath,
+  };
 }
 
 export async function upsertDocumentoEmpresaAction(formData: FormData) {

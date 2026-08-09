@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
@@ -73,6 +74,7 @@ export function ComparativoClient({
   const [finalLines, setFinalLines] = useState<
     ReturnType<typeof buildCotizacionFinal>
   >([]);
+  const [finalVersion, setFinalVersion] = useState<number | null>(null);
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState<string | null>(null);
   const router = useRouter();
@@ -158,8 +160,10 @@ export function ComparativoClient({
           seleccion,
         });
         setFinalLines(res.lineas);
+        setFinalVersion(res.version);
         setShowFinal(true);
-        setMsg(`Cotización final v${res.version} guardada en el expediente`);
+        setMsg(`Cotización final v${res.version} guardada · lista para PDF`);
+        router.refresh();
       } catch (e) {
         setMsg(e instanceof Error ? e.message : "Error al generar");
       }
@@ -371,10 +375,18 @@ export function ComparativoClient({
             </tbody>
           </table>
         </div>
-        <div className="mt-4 flex justify-end gap-2">
+        <div className="mt-4 flex flex-wrap justify-end gap-2">
           <Button variant="ghost" onClick={() => setShowFinal(false)}>
             Cerrar
           </Button>
+          {finalVersion ? (
+            <Link
+              href={`/app/comercial/${expedienteId}/cotizacion/${finalVersion}`}
+              target="_blank"
+            >
+              <Button variant="glass">Ver / Imprimir PDF</Button>
+            </Link>
+          ) : null}
           <Button onClick={passToItza}>Pasar a Itza</Button>
         </div>
       </GlassModal>

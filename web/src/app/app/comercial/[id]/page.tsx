@@ -242,15 +242,28 @@ export default async function ExpedientePage({
                       exp.finales.map((f) => (
                         <li
                           key={f.id}
-                          className="glass-thin rounded-2xl px-3 py-2"
+                          className="glass-thin flex flex-wrap items-center justify-between gap-2 rounded-2xl px-3 py-2"
                         >
-                          v{f.version} · markup interno {f.markupPctAplicado}% ·{" "}
-                          {f.criterio}
-                          <span className="mt-0.5 block text-[11px] text-[var(--text-muted)]">
-                            {f.createdAt
-                              ? new Date(f.createdAt).toLocaleString("es-MX")
-                              : ""}
-                          </span>
+                          <div>
+                            <p>
+                              v{f.version} ·{" "}
+                              <span className="text-[var(--text-muted)]">
+                                markup interno {f.markupPctAplicado}%
+                              </span>{" "}
+                              · {f.criterio}
+                            </p>
+                            <span className="mt-0.5 block text-[11px] text-[var(--text-muted)]">
+                              {f.createdAt
+                                ? new Date(f.createdAt).toLocaleString("es-MX")
+                                : ""}
+                            </span>
+                          </div>
+                          <Link
+                            href={`/app/comercial/${exp.id}/cotizacion/${f.version}`}
+                            className="text-xs font-medium text-[var(--accent)]"
+                          >
+                            PDF cliente →
+                          </Link>
                         </li>
                       ))
                     )}

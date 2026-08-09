@@ -345,3 +345,52 @@ body {
   background: color-mix(in srgb, var(--accent) 40%, transparent);
   color: var(--text);
 }
+
+/* Cotización final — impresión / PDF (sin chrome de la app) */
+@media print {
+  body {
+    background: white !important;
+    color: #111 !important;
+  }
+
+  .print\:hidden,
+  [data-print-hide],
+  aside,
+  nav,
+  .ylika-bot,
+  .module-nav,
+  .float-orbs {
+    display: none !important;
+  }
+
+  .cotizacion-print,
+  .print-sheet {
+    background: white !important;
+    color: #111 !important;
+    box-shadow: none !important;
+  }
+
+  .print-sheet {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+
+  .cotizacion-print a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
+}
+
+.cotizacion-print .print-sheet {
+  background: color-mix(in srgb, var(--glass) 55%, transparent);
+  border: 1px solid var(--glass-border);
+  border-radius: 28px;
+  margin-bottom: 2rem;
+  padding: 2rem 1.75rem;
+}
+
+@media (min-width: 640px) {
+  .cotizacion-print .print-sheet {
+    padding: 2.5rem;
+  }
+}
