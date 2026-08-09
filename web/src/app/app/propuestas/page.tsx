@@ -8,14 +8,19 @@ import {
   enviarADirectorAction,
   marcarEnviadaAction,
 } from "@/app/app/comercial/actions";
+import {
+  listCambiosPendientesGlobal,
+  resolverCambioAction,
+} from "@/app/app/comercial/edit-actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function PropuestasPage() {
-  const [paraItza, paraNesim, enviadas] = await Promise.all([
+  const [paraItza, paraNesim, enviadas, cambios] = await Promise.all([
     listExpedientesByFilter({ estatusIn: ["PROPUESTA_ADMIN"] }),
     listExpedientesByFilter({ estatusIn: ["REVISION_DIRECTOR"] }),
     listExpedientesByFilter({ estatusIn: ["ENVIADA"] }),
+    listCambiosPendientesGlobal(),
   ]);
 
   return (
@@ -27,6 +32,52 @@ export default async function PropuestasPage() {
         </span>
       }
     >
+      {cambios.length > 0 && (
+        <section className="mb-4">
+          <h2 className="mb-2 px-1 text-sm font-semibold">
+            Autorizaciones de cambio · {cambios.length}
+          </h2>
+          <ul className="space-y-2">
+            {cambios.map((c) => (
+              <li
+                key={c.id}
+                className="glass float-card flex flex-wrap items-center justify-between gap-3 rounded-[24px] px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-medium">
+                    {c.codigo} · {c.tipo}
+                  </p>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    {c.solicitante} · {c.titulo}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Link href={`/app/comercial/${c.expedienteId}`}>
+                    <Button size="sm" variant="ghost">
+                      Ver
+                    </Button>
+                  </Link>
+                  <form action={resolverCambioAction}>
+                    <input type="hidden" name="cambioId" value={c.id} />
+                    <input type="hidden" name="decision" value="APROBADA" />
+                    <Button type="submit" size="sm" variant="accent">
+                      Aprobar
+                    </Button>
+                  </form>
+                  <form action={resolverCambioAction}>
+                    <input type="hidden" name="cambioId" value={c.id} />
+                    <input type="hidden" name="decision" value="RECHAZADA" />
+                    <Button type="submit" size="sm" variant="ghost">
+                      Rechazar
+                    </Button>
+                  </form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       <section className="mb-4">
         <div className="mb-2 flex items-center justify-between px-1">
           <h2 className="text-sm font-semibold">Cola Itza · propuesta admin</h2>

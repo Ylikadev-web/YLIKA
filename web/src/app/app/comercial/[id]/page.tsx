@@ -1,11 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth/config";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
 import { ComparativoClient } from "@/app/app/comercial/[id]/comparativo-client";
 import { ExcelImportPanel } from "@/components/comercial/excel-import";
+import { EditPanel } from "@/components/comercial/edit-panel";
+import { ProcessTree } from "@/components/comercial/process-tree";
 import { WorkflowPanel } from "@/components/comercial/workflow-panel";
+import { listCambiosPendientesExpediente } from "@/app/app/comercial/edit-actions";
 import { getExpedienteById } from "@/lib/db/queries";
 import { ESTATUS_LABEL, type EstatusExpediente } from "@/lib/domain/workflow";
 import type { SelectionMode } from "@/lib/quotes/comparativo";
@@ -18,8 +22,18 @@ export default async function ExpedientePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const exp = await getExpedienteById(id);
+  const [exp, session, cambios] = await Promise.all([
+    getExpedienteById(id),
+    auth(),
+    listCambiosPendientesExpediente(id),
+  ]);
   if (!exp) notFound();
+
+  const roles = (session?.user as { roles?: string[] } | undefined)?.roles ?? [];
+  const canApprove =
+    roles.includes("DIRECTOR") ||
+    roles.includes("ADMIN_FINANZAS") ||
+    roles.includes("ADMIN_SISTEMAS");
 
   const usedAliases = new Set(exp.cotizaciones.map((c) => c.alias));
   const nextAlias =
@@ -28,7 +42,7 @@ export default async function ExpedientePage({
   return (
     <AppShell
       title={exp.codigo}
-      subtitle={`${ESTATUS_LABEL[exp.estatus as EstatusExpediente] ?? exp.estatus}`}
+      subtitle={ESTATUS_LABEL[exp.estatus as EstatusExpediente] ?? exp.estatus}
       actions={
         <Link href="/app/comercial">
           <Button variant="ghost" size="sm">
@@ -37,6 +51,12 @@ export default async function ExpedientePage({
         </Link>
       }
     >
+      <ProcessTree
+        codigo={exp.codigo}
+        estatus={exp.estatus}
+        responsableNombre={exp.responsableNombre}
+      />
+
       <div className="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {[
           ["Empresa", exp.empresaCodigo],
@@ -54,6 +74,15 @@ export default async function ExpedientePage({
       </div>
 
       <WorkflowPanel expedienteId={exp.id} estatus={exp.estatus} />
+
+      <EditPanel
+        expedienteId={exp.id}
+        titulo={exp.titulo}
+        clienteNombre={exp.clienteNombre}
+        partidas={exp.partidas}
+        cambiosPendientes={cambios}
+        canApprove={canApprove}
+      />
 
       <ExcelImportPanel expedienteId={exp.id} nextAlias={nextAlias} />
 
@@ -112,12 +141,6 @@ export default async function ExpedientePage({
               ))
             )}
           </ul>
-          {exp.folioExterno ? (
-            <p className="mt-4 text-xs text-[var(--text-muted)]">
-              Folio externo: {exp.folioExterno}
-              {exp.caracter ? ` · ${exp.caracter}` : ""}
-            </p>
-          ) : null}
         </Glass>
       </div>
     </AppShell>

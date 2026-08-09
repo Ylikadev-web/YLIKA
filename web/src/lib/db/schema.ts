@@ -606,6 +606,68 @@ export const bolsaMovimientos = pgTable("bolsa_movimientos", {
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+// ── Bot personal + solicitudes de cambio ─────────────────────────────
+export const estadoRecordatorioEnum = pgEnum("estado_recordatorio", [
+  "PENDIENTE",
+  "HECHO",
+  "CANCELADO",
+]);
+
+export const botRecordatorios = pgTable("bot_recordatorios", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  texto: text("texto").notNull(),
+  cuando: timestamp("cuando", { mode: "date" }).notNull(),
+  estado: estadoRecordatorioEnum("estado").notNull().default("PENDIENTE"),
+  meta: jsonb("meta").notNull().default({}),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
+export const botMensajes = pgTable("bot_mensajes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: uuid("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  rol: text("rol").notNull(), // user | bot
+  contenido: text("contenido").notNull(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
+export const tipoCambioEnum = pgEnum("tipo_cambio_solicitud", [
+  "CAMBIO_TITULO",
+  "AGREGAR_PARTIDA",
+  "EDITAR_PARTIDA",
+  "ELIMINAR_PARTIDA",
+  "CAMBIO_CLIENTE",
+  "OTRO",
+]);
+
+export const estadoCambioEnum = pgEnum("estado_cambio_solicitud", [
+  "PENDIENTE",
+  "APROBADA",
+  "RECHAZADA",
+]);
+
+export const solicitudesCambio = pgTable("solicitudes_cambio", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  expedienteId: uuid("expediente_id")
+    .notNull()
+    .references(() => expedientes.id, { onDelete: "cascade" }),
+  tipo: tipoCambioEnum("tipo").notNull(),
+  payload: jsonb("payload").notNull().default({}),
+  motivo: text("motivo"),
+  estado: estadoCambioEnum("estado").notNull().default("PENDIENTE"),
+  solicitadoPor: uuid("solicitado_por")
+    .notNull()
+    .references(() => users.id),
+  revisadoPor: uuid("revisado_por").references(() => users.id),
+  revisadoAt: timestamp("revisado_at", { mode: "date" }),
+  notaRevision: text("nota_revision"),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   roles: many(usuarioRoles),
   empresas: many(usuarioEmpresas),

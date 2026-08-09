@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, lte } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { listPendientesAprobacion } from "@/lib/db/bolsa";
 import * as s from "@/lib/db/schema";
@@ -28,7 +28,10 @@ const ROLE_STATUSES: Record<string, EstatusExpediente[]> = {
   ADMIN_SISTEMAS: [],
 };
 
-export async function listPendientesForRoles(roles: string[] = []) {
+export async function listPendientesForRoles(
+  roles: string[] = [],
+  userId?: string | null,
+) {
   const db = getDb();
   const statuses = new Set<EstatusExpediente>();
   for (const r of roles) {
@@ -133,6 +136,63 @@ export async function listPendientesForRoles(roles: string[] = []) {
         href: "/app/entregas",
         owner: "Operaciones",
         tone: "cyan",
+      });
+    }
+  }
+
+  // Solicitudes de cambio → Itza / Nesim / Sistemas
+  if (
+    roles.includes("DIRECTOR") ||
+    roles.includes("ADMIN_FINANZAS") ||
+    roles.includes("ADMIN_SISTEMAS")
+  ) {
+    const cambios = await db
+      .select({
+        id: s.solicitudesCambio.id,
+        tipo: s.solicitudesCambio.tipo,
+        codigo: s.expedientes.codigo,
+        expedienteId: s.expedientes.id,
+      })
+      .from(s.solicitudesCambio)
+      .innerJoin(
+        s.expedientes,
+        eq(s.solicitudesCambio.expedienteId, s.expedientes.id),
+      )
+      .where(eq(s.solicitudesCambio.estado, "PENDIENTE"))
+      .limit(8);
+    for (const c of cambios) {
+      items.push({
+        id: `cambio-${c.id}`,
+        title: `Autorizar ${c.tipo} · ${c.codigo}`,
+        href: `/app/comercial/${c.expedienteId}`,
+        owner: "Itza/Nesim",
+        tone: "rose",
+      });
+    }
+  }
+
+  // Recordatorios del usuario (próximas 24h o vencidos)
+  if (userId) {
+    const soon = new Date(Date.now() + 24 * 3600_000);
+    const reminders = await db
+      .select()
+      .from(s.botRecordatorios)
+      .where(
+        and(
+          eq(s.botRecordatorios.userId, userId),
+          eq(s.botRecordatorios.estado, "PENDIENTE"),
+          lte(s.botRecordatorios.cuando, soon),
+        ),
+      )
+      .orderBy(asc(s.botRecordatorios.cuando))
+      .limit(6);
+    for (const r of reminders) {
+      items.push({
+        id: `remi-${r.id}`,
+        title: `⏰ ${r.texto}`,
+        href: "/app",
+        owner: "Tu bot",
+        tone: "amber",
       });
     }
   }
