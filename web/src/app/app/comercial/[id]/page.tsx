@@ -10,6 +10,7 @@ import { EditPanel } from "@/components/comercial/edit-panel";
 import { RelacionesPanel } from "@/components/comercial/relaciones-panel";
 import { ChecklistPanel } from "@/components/comercial/checklist-panel";
 import { BasesPanel } from "@/components/comercial/bases-panel";
+import { DeleteSolicitudButton } from "@/components/comercial/delete-solicitud-button";
 import { ProcessTree } from "@/components/comercial/process-tree";
 import { WorkflowPanel } from "@/components/comercial/workflow-panel";
 import { ExpedienteExplorer } from "@/components/comercial/expediente-explorer";
@@ -70,11 +71,17 @@ export default async function ExpedientePage({
       title={exp.codigo}
       subtitle={`${ESTATUS_LABEL[exp.estatus as EstatusExpediente] ?? exp.estatus} · ${exp.titulo}`}
       actions={
-        <Link href="/app/comercial">
-          <Button variant="ghost" size="sm">
-            Pipeline
-          </Button>
-        </Link>
+        <div className="flex flex-wrap items-center gap-1.5">
+          <Link href="/app/comercial">
+            <Button variant="ghost" size="sm">
+              Pipeline
+            </Button>
+          </Link>
+          <DeleteSolicitudButton
+            expedienteId={exp.id}
+            codigo={exp.codigo}
+          />
+        </div>
       }
     >
       <ProcessTree
