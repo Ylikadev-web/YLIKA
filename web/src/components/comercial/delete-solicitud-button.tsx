@@ -6,7 +6,6 @@ import { Trash2 } from "lucide-react";
 import { eliminarSolicitudAction } from "@/app/app/comercial/actions";
 import { Button } from "@/components/ui/button";
 import { GlassModal } from "@/components/ui/glass-modal";
-import { Input } from "@/components/ui/input";
 
 type Props = {
   expedienteId: string;
@@ -71,12 +70,13 @@ export function DeleteSolicitudButton({
               <span className="font-mono text-[var(--fg)]">{codigo}</span> para
               confirmar
             </span>
-            <Input
+            <input
               value={confirmCodigo}
               onChange={(e) => setConfirmCodigo(e.target.value)}
               placeholder={codigo}
               autoComplete="off"
               disabled={pending}
+              className="mt-1 w-full rounded-2xl border border-[var(--glass-border)] bg-transparent px-3 py-2 text-sm"
             />
           </label>
           {error ? (
