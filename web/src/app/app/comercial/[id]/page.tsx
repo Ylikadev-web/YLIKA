@@ -80,6 +80,7 @@ export default async function ExpedientePage({
           <DeleteSolicitudButton
             expedienteId={exp.id}
             codigo={exp.codigo}
+            compact
           />
         </div>
       }
