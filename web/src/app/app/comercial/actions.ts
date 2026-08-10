@@ -709,36 +709,48 @@ export async function marcarPerdidaAction(formData: FormData) {
 
 /** Elimina la solicitud (y el expediente en cascada). Requiere confirmar el folio. */
 export async function eliminarSolicitudAction(formData: FormData) {
-  await requireUser();
-  const db = getDb();
-  const expedienteId = String(formData.get("expedienteId") || "");
-  const confirmCodigo = String(formData.get("confirmCodigo") || "").trim();
-  if (!expedienteId) throw new Error("Expediente requerido");
+  try {
+    await requireUser();
+    const db = getDb();
+    const expedienteId = String(formData.get("expedienteId") || "");
+    const confirmCodigo = String(formData.get("confirmCodigo") || "").trim();
+    if (!expedienteId) {
+      return { ok: false as const, error: "Expediente requerido" };
+    }
 
-  const [exp] = await db
-    .select({
-      id: s.expedientes.id,
-      codigo: s.expedientes.codigo,
-      solicitudId: s.expedientes.solicitudId,
-    })
-    .from(s.expedientes)
-    .where(eq(s.expedientes.id, expedienteId))
-    .limit(1);
+    const [exp] = await db
+      .select({
+        id: s.expedientes.id,
+        codigo: s.expedientes.codigo,
+        solicitudId: s.expedientes.solicitudId,
+      })
+      .from(s.expedientes)
+      .where(eq(s.expedientes.id, expedienteId))
+      .limit(1);
 
-  if (!exp) throw new Error("Expediente no encontrado");
-  if (confirmCodigo.toUpperCase() !== exp.codigo.toUpperCase()) {
-    throw new Error("El folio no coincide");
+    if (!exp) {
+      return { ok: false as const, error: "Expediente no encontrado" };
+    }
+    if (confirmCodigo.toUpperCase() !== exp.codigo.toUpperCase()) {
+      return { ok: false as const, error: "El folio no coincide" };
+    }
+
+    // Borrar solicitud → cascada a expediente y dependencias
+    await db.delete(s.solicitudes).where(eq(s.solicitudes.id, exp.solicitudId));
+
+    revalidatePath("/app/comercial");
+    revalidatePath("/app/licitaciones");
+    revalidatePath("/app/propuestas");
+    revalidatePath("/app/entregas");
+    revalidatePath("/app/documentos");
+    revalidatePath("/app");
+    return { ok: true as const };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "No se pudo eliminar",
+    };
   }
-
-  // Borrar solicitud → cascada a expediente y dependencias
-  await db.delete(s.solicitudes).where(eq(s.solicitudes.id, exp.solicitudId));
-
-  revalidatePath("/app/comercial");
-  revalidatePath("/app/licitaciones");
-  revalidatePath("/app/propuestas");
-  revalidatePath("/app/entregas");
-  revalidatePath("/app/documentos");
-  revalidatePath("/app");
 }
 
 export async function importListaLimpiaExcelAction(formData: FormData) {
