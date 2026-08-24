@@ -4,12 +4,15 @@ import dynamic from "next/dynamic";
 
 const BlackHole = dynamic(
   () => import("@/components/fx/black-hole").then((m) => m.BlackHole),
-  { ssr: false },
+  {
+    ssr: false,
+    loading: () => <div className="fx-aurora-fallback absolute inset-0" />,
+  },
 );
 
 /**
  * Full-bleed Black Hole stage for marketing/auth surfaces.
- * Tuned loud enough to read clearly behind the glass card.
+ * z-0 (not negative) so it stays above body background.
  */
 export function BlackHoleBackdrop({
   interactive = true,
@@ -18,32 +21,33 @@ export function BlackHoleBackdrop({
 }) {
   return (
     <div
-      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+      className="pointer-events-none fixed inset-0 z-0 overflow-hidden"
       aria-hidden
     >
       <div className="absolute inset-0 bg-[#02040a]" />
+      {/* Always-on CSS fallback so the page never looks empty while WebGL boots */}
+      <div className="fx-aurora-fallback absolute inset-0" />
       <BlackHole
         className="absolute inset-0"
         backgroundColor="#02040a"
-        speed={1.15}
-        zoom={1.25}
-        particleCount={18}
-        orbSize={1.15}
-        glow={0.22}
-        contrast={2.1}
+        speed={1.2}
+        zoom={1.15}
+        particleCount={20}
+        orbSize={1.25}
+        glow={0.28}
+        contrast={1.9}
         mirrorSplits={3}
         warpEnabled
-        distanceFade={0.55}
-        colorShiftR={0.6}
-        colorShiftG={-2.2}
-        colorShiftB={-5.4}
-        colorSpeed={0.28}
+        distanceFade={0.62}
+        colorShiftR={0.8}
+        colorShiftG={-1.8}
+        colorShiftB={-5.0}
+        colorSpeed={0.32}
         opacity={1}
         cursorInteraction={interactive}
-        cursorIntensity={1.35}
+        cursorIntensity={1.4}
       />
-      {/* Light edge vignette only — keep the center effect visible */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_85%_70%_at_50%_45%,transparent_35%,rgba(2,4,10,0.55)_100%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_90%_75%_at_50%_42%,transparent_25%,rgba(2,4,10,0.45)_100%)]" />
     </div>
   );
 }

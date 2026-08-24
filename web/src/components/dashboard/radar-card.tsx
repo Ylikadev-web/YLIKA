@@ -43,25 +43,35 @@ export function RadarCard({ item, index }: { item: RadarItem; index: number }) {
   return (
     <Link
       href={href}
-      className="group float-card glass relative rounded-[28px] p-4 transition hover:-translate-y-0.5"
-      style={{ animationDelay: `${index * 40}ms` }}
+      className="group float-card glass relative rounded-[28px] p-4 transition hover:-translate-y-1 hover:shadow-[0_20px_50px_rgba(0,0,0,0.35)]"
+      style={{ animationDelay: `${index * 55}ms` }}
     >
+      {(item.estatus === "PROPUESTA_ADMIN" ||
+        item.estatus === "ENTREGA" ||
+        item.estatus === "REVISION_DIRECTOR") && (
+        <span
+          className="pointer-events-none absolute inset-0 rounded-[28px] ring-1 ring-[color-mix(in_srgb,var(--accent-2)_35%,transparent)]"
+          style={{
+            animation: "pending-pulse 2.4s ease-in-out infinite",
+            animationDelay: `${index * 120}ms`,
+          }}
+        />
+      )}
       <div className="flex items-center gap-2">
         <span
-          className="h-2 w-2 rounded-full"
-          style={{
-            background:
-              item.estatus === "PROPUESTA_ADMIN"
-                ? "var(--accent-2)"
-                : item.estatus === "ENTREGA" || item.estatus === "COMPRA"
-                  ? "var(--accent)"
-                  : item.estatus === "REVISION_REQUISITOS"
-                    ? "var(--accent-2)"
-                    : item.estatus === "COMPARATIVO" ||
-                        item.estatus === "COTIZACION_FINAL"
-                      ? "var(--accent)"
-                      : "var(--text-muted)",
-          }}
+          className={cn(
+            "status-dot h-2.5 w-2.5",
+            item.estatus === "PROPUESTA_ADMIN" ||
+              item.estatus === "REVISION_REQUISITOS" ||
+              item.estatus === "REVISION_DIRECTOR"
+              ? "status-dot-urgent"
+              : item.estatus === "ENTREGA" ||
+                  item.estatus === "COMPRA" ||
+                  item.estatus === "COMPARATIVO" ||
+                  item.estatus === "COTIZACION_FINAL"
+                ? "status-dot-active"
+                : "status-dot-idle",
+          )}
         />
         <span className="text-[11px] text-[var(--text-muted)]">
           {item.codigo}

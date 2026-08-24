@@ -324,6 +324,91 @@ body {
   }
 }
 
+/* Aurora fallback behind WebGL (login/landing) */
+.fx-aurora-fallback {
+  background:
+    radial-gradient(ellipse 55% 45% at 50% 48%, rgba(10, 163, 168, 0.35), transparent 60%),
+    radial-gradient(ellipse 40% 35% at 30% 40%, rgba(243, 146, 0, 0.22), transparent 55%),
+    radial-gradient(ellipse 45% 40% at 70% 55%, rgba(45, 212, 191, 0.18), transparent 55%),
+    radial-gradient(ellipse 30% 25% at 50% 50%, rgba(255, 209, 0, 0.08), transparent 50%);
+  animation: aurora-breathe 8s ease-in-out infinite;
+  filter: blur(2px);
+}
+
+@keyframes aurora-breathe {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08) rotate(2deg);
+  }
+}
+
+/* Status dots that demand attention */
+.status-dot {
+  display: inline-block;
+  border-radius: 9999px;
+  box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.status-dot-urgent {
+  color: var(--accent-2);
+  background: var(--accent-2);
+  animation: status-ping 1.6s ease-out infinite;
+}
+
+.status-dot-active {
+  color: var(--accent);
+  background: var(--accent);
+  animation: status-ping 2.4s ease-out infinite;
+}
+
+.status-dot-idle {
+  background: var(--text-muted);
+}
+
+@keyframes status-ping {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, currentColor 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 8px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* CTA that draws the eye */
+.cta-pulse {
+  animation: cta-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes cta-glow {
+  0%,
+  100% {
+    box-shadow: 0 10px 30px color-mix(in srgb, var(--accent-2) 35%, transparent);
+  }
+  50% {
+    box-shadow:
+      0 12px 40px color-mix(in srgb, var(--accent-2) 55%, transparent),
+      0 0 0 4px color-mix(in srgb, var(--accent-2) 18%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fx-aurora-fallback,
+  .status-dot-urgent,
+  .status-dot-active,
+  .cta-pulse,
+  .pending-glow-ring {
+    animation: none !important;
+  }
+}
+
 .display {
   font-family: var(--font-display), var(--font-body), sans-serif;
   letter-spacing: -0.03em;

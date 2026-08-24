@@ -239,6 +239,9 @@ export function BlackHole({
     }
 
     renderer.setClearColor(0x000000, 0);
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
+    renderer.domElement.style.display = "block";
     mount.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
@@ -306,7 +309,8 @@ export function BlackHole({
     document.addEventListener("mouseleave", onMouseLeave);
 
     let frameId = 0;
-    let isVisible = false;
+    // Start visible — fixed full-screen stages often miss the first IO tick
+    let isVisible = true;
     let isPageVisible = !document.hidden;
     let elapsed = 0;
     let lastT = 0;

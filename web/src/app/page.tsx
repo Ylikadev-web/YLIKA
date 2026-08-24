@@ -1,16 +1,29 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
 import { BlackHoleBackdrop } from "@/components/fx/black-hole-backdrop";
 
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen overflow-hidden">
       <BlackHoleBackdrop />
-      <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-16 text-center">
-        <div className="glass relative overflow-hidden rounded-[36px] px-8 py-14 sm:px-16">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-16 text-center">
+        <motion.div
+          className="glass relative overflow-hidden rounded-[36px] px-8 py-14 sm:px-16"
+          initial={{ opacity: 0, y: 32, scale: 0.96 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: "spring", stiffness: 340, damping: 28 }}
+        >
           <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_22%,transparent),transparent)]" />
-          <div className="relative mx-auto mb-8 h-24 w-24 overflow-hidden rounded-[28px] ring-1 ring-[var(--glass-border)]">
+          <motion.div
+            className="relative mx-auto mb-8 h-24 w-24 overflow-hidden rounded-[28px] ring-1 ring-[var(--glass-border)]"
+            initial={{ scale: 0.85, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.1, type: "spring", stiffness: 400 }}
+          >
             <Image
               src="/brand/ylika-logo.png"
               alt="YLIKA"
@@ -19,7 +32,7 @@ export default function LandingPage() {
               sizes="96px"
               priority
             />
-          </div>
+          </motion.div>
           <p className="display text-xs font-semibold tracking-[0.35em] text-[var(--accent)]">
             YLIKA
           </p>
@@ -33,7 +46,7 @@ export default function LandingPage() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/login"
-              className="inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-2)] px-5 text-sm font-semibold text-[#111] shadow-[0_12px_40px_color-mix(in_srgb,var(--accent-2)_35%,transparent)] transition hover:brightness-110"
+              className="cta-pulse inline-flex h-12 items-center gap-2 rounded-2xl bg-[var(--accent-2)] px-5 text-sm font-semibold text-[#111] transition hover:brightness-110"
             >
               Entrar al workspace
               <ArrowRight className="h-4 w-4" />
@@ -46,9 +59,9 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className="mt-8 text-[11px] text-[var(--text-muted)]">
-            MONE · DAKAM · NARAMO · acceso temporal vía Cloudflare Tunnel
+            MONE · DAKAM · NARAMO
           </p>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
