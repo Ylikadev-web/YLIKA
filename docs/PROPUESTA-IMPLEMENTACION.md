@@ -93,12 +93,12 @@ Para YLIKA, copiar **patrones** (mesas, KPIs, Drive, folios) aporta; copiar **am
 
 | # | Entrega | Por qué | Criterio de aceptación |
 |---|---------|---------|------------------------|
-| A1 | Activar Google Drive real | Sin esto el espejo no existe | Crear expediente → carpeta real en Drive; link visible en UI |
-| A2 | Checklist de documentos por etapa | Garantiza “qué falta guardar” | Por estatus: lista de docs requeridos + % completo |
-| A3 | Upload unificado → tipo → subcarpeta Drive | Cierra el hueco de memoria | Bases, propuesta, fallo, OC, remisión, factura sincronizan |
-| A4 | Panel “Archivo del expediente” | Una sola vista de verdad | Lista docs + estado Drive + abrir en Drive + bitácora de uploads |
-| A5 | Campos clave de plazos | Tiempo y forma | Junta, apertura, fallo, vigencia oferta; alertas en Inicio |
-| A6 | Cliente obligatorio antes de enviar | Datos mínimos | Bloquear `ENVIADA` si falta cliente/contacto mínimo |
+| A1 | Activar Google Drive real | Sin esto el espejo no existe | Crear expediente → carpeta real en Drive; link visible en UI · **código/UI ✅ · creds ⬜** |
+| A2 | Checklist de documentos por etapa | Garantiza “qué falta guardar” | Por estatus: lista de docs requeridos + % completo · **✅** |
+| A3 | Upload unificado → tipo → subcarpeta Drive | Cierra el hueco de memoria | Bases, propuesta, fallo, OC, remisión, factura sincronizan · **✅** |
+| A4 | Panel “Archivo del expediente” | Una sola vista de verdad | Lista docs + estado Drive + abrir en Drive · **✅** |
+| A5 | Campos clave de plazos | Tiempo y forma | Junta, apertura, fallo, vigencia oferta; alertas en Inicio · **✅** |
+| A6 | Cliente obligatorio antes de enviar | Datos mínimos | Bloquear `ENVIADA` si falta cliente/contacto mínimo · **✅** |
 
 **Fuera de A:** caja chica, rol COMPRAS, parser PDF inteligente, obra.
 
