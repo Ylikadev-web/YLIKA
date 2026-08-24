@@ -1,11 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
+import { BlackHoleBackdrop } from "@/components/fx/black-hole-backdrop";
 
 export default function LandingPage() {
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <div className="app-atmosphere" aria-hidden />
+      <BlackHoleBackdrop />
       <div className="relative mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-6 py-16 text-center">
         <div className="glass relative overflow-hidden rounded-[36px] px-8 py-14 sm:px-16">
           <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--accent)_22%,transparent),transparent)]" />

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { FormEvent, Suspense, useState } from "react";
+import { BlackHoleBackdrop } from "@/components/fx/black-hole-backdrop";
 import { Button } from "@/components/ui/button";
 
 function LoginForm() {
@@ -34,7 +35,7 @@ function LoginForm() {
 
   return (
     <div className="relative min-h-screen">
-      <div className="app-atmosphere" aria-hidden />
+      <BlackHoleBackdrop />
       <div className="mx-auto flex min-h-screen max-w-md items-center px-4 py-12">
         <form
           onSubmit={onSubmit}
