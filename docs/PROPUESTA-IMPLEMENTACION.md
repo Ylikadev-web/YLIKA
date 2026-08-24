@@ -111,12 +111,12 @@ Para YLIKA, copiar **patrones** (mesas, KPIs, Drive, folios) aporta; copiar **am
 
 | # | Entrega | Por qué | Criterio de aceptación |
 |---|---------|---------|------------------------|
-| B1 | Alertas duras de vencimiento | Constancias / fechas | Badge + bandeja: ≤30 días constancias; junta/fallo próximos |
-| B2 | Handoff explícito | Menos “¿ya lo pasó?” | Acción “Enviar a {siguiente}” escribe bitácora + asigna responsable |
-| B3 | Bandeja por rol endurecida | Inicio accionable | Solo pendientes de mi etapa; click abre expediente en tab correcto |
-| B4 | Privado vs gobierno: plantillas de checklist | Mismo motor, distinta lista | Plantilla GOB vs PRIV al crear |
-| B5 | OC post-ganada más formal | Cierra compra | Folio OC, proveedor, partidas, archivo en expediente |
-| B6 | Cobranza: estados reales | Cierra el ciclo | Facturada / parcial / cobrada / vencida + monto |
+| B1 | Alertas duras de vencimiento | Constancias / fechas | Badge + bandeja: ≤30 días constancias; junta/fallo próximos · **✅** |
+| B2 | Handoff explícito | Menos “¿ya lo pasó?” | Acción “Enviar a {siguiente}” escribe bitácora + asigna responsable · **✅** |
+| B3 | Bandeja por rol endurecida | Inicio accionable | Solo pendientes de mi etapa; click abre expediente en tab correcto · **✅** |
+| B4 | Privado vs gobierno: plantillas de checklist | Mismo motor, distinta lista | Plantilla GOB vs PRIV al crear · **✅** |
+| B5 | OC post-ganada más formal | Cierra compra | Folio OC, proveedor, partidas, archivo en expediente · **✅** (folio+proveedor+monto; líneas OC = después) |
+| B6 | Cobranza: estados reales | Cierra el ciclo | Facturada / parcial / cobrada / vencida + monto · **✅** |
 
 **Opcional B7:** rol `COMPRAS` dedicado (si confirmas).
 
