@@ -128,10 +128,10 @@ Para YLIKA, copiar **patrones** (mesas, KPIs, Drive, folios) aporta; copiar **am
 
 | # | Entrega | Notas |
 |---|---------|-------|
-| C0 | Activar Google Drive real + backfill | Cuando la estructura ya esté en uso diario |
+| C0 | Activar Google Drive real + backfill | Cuando la estructura ya esté en uso diario · **⏸ diferido** |
 | C1 | Caja chica por expediente (patrón AZTK) | Solo si Tesorería lo pide |
-| C2 | Historial por cliente (todas las solicitudes) | Valor comercial / gobierno recurrente |
-| C3 | Reportes semanales (ganadas, ciclo, montos) | Para Nesim / dirección |
+| C2 | Historial por cliente (todas las solicitudes) | Valor comercial / gobierno recurrente · **✅** |
+| C3 | Reportes semanales (ganadas, ciclo, montos) | Para Nesim / dirección · **✅** snapshot |
 | C4 | Parser PDF de bases (asistido) | Requiere PDFs reales; nunca bloqueante |
 | C5 | Nav filtrada por áreas asignadas | Cosmético útil |
 | C6 | Obra / estimaciones | Solo con proyecto real |

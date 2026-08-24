@@ -7,6 +7,7 @@ const BUILT = new Set([
   "compras",
   "entregas",
   "clientes",
+  "reportes",
   "tesoreria",
   "proyectos",
   "licitaciones",
