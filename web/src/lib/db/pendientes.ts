@@ -578,5 +578,35 @@ export async function listPendientesForRoles(
     }
   }
 
+  // ── Caja chica por comprobar (Itza) ────────────────────────────────
+  if (
+    roles.includes("ADMIN_FINANZAS") ||
+    roles.includes("ADMIN_SISTEMAS") ||
+    roles.includes("DIRECTOR")
+  ) {
+    try {
+      const { listCajaChicaPorComprobar } = await import("@/lib/db/caja-chica");
+      const caja = await listCajaChicaPorComprobar(8);
+      for (const m of caja) {
+        items.push({
+          id: `caja-${m.id}`,
+          title: `Caja chica · $${Number(m.monto).toLocaleString("es-MX")} · ${m.expedienteCodigo}`,
+          href: `/app/comercial/${m.expedienteId}?tab=checklist`,
+          owner: "Itza",
+          tone: "amber",
+          tip: {
+            que: m.concepto,
+            conQuien: m.solicitadoNombre ?? "—",
+            cuando: m.fecha
+              ? new Date(m.fecha).toLocaleDateString("es-MX")
+              : undefined,
+          },
+        });
+      }
+    } catch {
+      /* ignore cold schema */
+    }
+  }
+
   return items;
 }

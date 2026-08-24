@@ -811,6 +811,32 @@ export const cobranzas = pgTable("cobranzas", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+/**
+ * Caja chica por expediente (patrón AZTK, sin Drive).
+ * estatus: POR_COMPROBAR | COMPROBADO | RECHAZADO
+ */
+export const cajaChicaMovimientos = pgTable("caja_chica_movimientos", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  expedienteId: uuid("expediente_id")
+    .notNull()
+    .references(() => expedientes.id, { onDelete: "cascade" }),
+  concepto: text("concepto").notNull(),
+  monto: numeric("monto", { precision: 14, scale: 2 }).notNull(),
+  moneda: text("moneda").notNull().default("MXN"),
+  estatus: text("estatus").notNull().default("POR_COMPROBAR"),
+  fecha: timestamp("fecha", { mode: "date" }).notNull().defaultNow(),
+  solicitadoPor: uuid("solicitado_por")
+    .notNull()
+    .references(() => users.id),
+  aprobadoPor: uuid("aprobado_por").references(() => users.id),
+  aprobadoAt: timestamp("aprobado_at", { mode: "date" }),
+  motivoRechazo: text("motivo_rechazo"),
+  documentoId: uuid("documento_id").references(() => documentos.id),
+  notas: text("notas"),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   roles: many(usuarioRoles),
   empresas: many(usuarioEmpresas),
