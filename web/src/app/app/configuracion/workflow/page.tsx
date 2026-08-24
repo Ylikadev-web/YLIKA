@@ -7,7 +7,8 @@ import { PIPELINE_STAGES } from "@/lib/domain/workflow";
 
 const ASSIGN = [
   { stage: "Revisión / luz verde / orden cotizar", role: "LICITACIONES", who: "Laura" },
-  { stage: "Cotización · comparativo · cot. final · recotizar", role: "COMPRAS_VENTAS", who: "Miguel, Fernando (+ Laura)" },
+  { stage: "Cotización · comparativo · cot. final", role: "COMPRAS_VENTAS", who: "Miguel, Fernando (+ Laura)" },
+  { stage: "Recotización · OC · proveedores", role: "COMPRAS", who: "Fernando (Compras)" },
   { stage: "Propuesta económica/técnica · cobranza · bolsa", role: "ADMIN_FINANZAS", who: "Itza" },
   { stage: "Envío propuesta", role: "DIRECTOR", who: "Nesim Zonana Bettech" },
   { stage: "Roles + módulos + workflow", role: "ADMIN_SISTEMAS", who: "Miguel (perfil Sistemas)" },
@@ -17,7 +18,7 @@ export default function WorkflowConfigPage() {
   return (
     <AppShell
       title="Workflow y roles"
-      subtitle="Solo ADMIN_SISTEMAS puede reasignar a quién cae cada etapa. Miguel opera con dos perfiles: Ventas/Compras y Sistemas."
+      subtitle="Solo ADMIN_SISTEMAS reasigna etapas. Comercial (Ventas) y Compras son roles separados."
     >
       <div className="grid gap-4 lg:grid-cols-2">
         <Glass className="p-5">

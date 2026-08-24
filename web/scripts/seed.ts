@@ -52,9 +52,15 @@ async function main() {
     },
     {
       codigo: "COMPRAS_VENTAS",
-      nombre: "Compras / Ventas",
+      nombre: "Comercial / Ventas",
       esAdmin: false,
-      permisos: { comercial: true, compras: true },
+      permisos: { comercial: true },
+    },
+    {
+      codigo: "COMPRAS",
+      nombre: "Compras",
+      esAdmin: false,
+      permisos: { compras: true, oc: true },
     },
     {
       codigo: "ADMIN_FINANZAS",
@@ -212,7 +218,7 @@ async function main() {
     {
       name: "Fernando",
       email: "fernando@ylika.local",
-      roles: ["COMPRAS_VENTAS"],
+      roles: ["COMPRAS", "COMPRAS_VENTAS"],
     },
     {
       name: "Itza",

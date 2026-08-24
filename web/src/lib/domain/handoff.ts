@@ -95,8 +95,8 @@ export const HANDOFFS_FROM: Partial<
   RECOTIZACION: [
     {
       hacia: "COMPRA",
-      label: "Emitir compra / OC",
-      owner: "Ventas · Compras",
+      label: "Emitir compra / OC → Compras",
+      owner: "Compras",
     },
   ],
   COMPRA: [

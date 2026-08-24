@@ -7,6 +7,7 @@ import { Glass } from "@/components/ui/glass";
 import { UsersAdminClient } from "@/components/config/users-admin-client";
 import { auth } from "@/lib/auth/config";
 import { listUsersWithRoles } from "@/lib/db/queries-modules";
+import { ensureDriveSchema } from "@/lib/db/ensure-drive-schema";
 import { ROLE_OPTIONS } from "@/lib/domain/areas";
 import { isGoogleDriveConfigured } from "@/lib/storage/drive";
 
@@ -20,6 +21,7 @@ export default async function UsuariosPage() {
     redirect("/app/configuracion");
   }
 
+  await ensureDriveSchema();
   const users = await listUsersWithRoles();
   const driveOk = isGoogleDriveConfigured();
 

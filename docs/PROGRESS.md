@@ -1,53 +1,51 @@
 # YLIKA Ops — Progress
 
-> Flujo: **Laura → Ventas → Itza → Nesim → (si gana) recotización → compra → remisión → cobranza**.  
-> **Prioridad:** estructura · Drive diferido.
+> Flujo: **Laura → Ventas → Itza → Nesim → (si gana) recotización → Compras (OC) → remisión → cobranza**.  
+> **Prioridad:** estructura · Drive diferido · rol COMPRAS activo.
 
 ---
 
 ## Expectativa final
 
 ```
-█████████████████░░░  84%
+█████████████████░░░  86%
 ```
-
-Antes ~78%. Subió con OC+partidas, historial cliente y reportes operativos.
 
 ---
 
 ## Progress bars por gate
 
-| Gate | Barra | % |
-|------|-------|---|
-| 0 Fundación | ████████████████████ | 100 |
-| 1 Comercial | ██████████████████░░ | 92 |
-| 2 Workflow | ██████████████████░░ | 92 |
-| 3 Post-ganada | ██████████████████░░ | 92 |
-| 4 Drive | ████████████░░░░░░░░ | 60 ⏸ |
-| 5 Usuarios | ██████████████████░░ | 90 |
-| 6 Docs | ████████████████░░░░ | 82 |
-| 7 Tesorería | ████████████░░░░░░░░ | 55 |
-| 8 UX | ██████████████████░░ | 88 |
-| 9 Obra | ██░░░░░░░░░░░░░░░░░░ | 10 |
-| **Reportes / cliente** | ████████████████░░░░ | **80** |
+| Gate | % |
+|------|---|
+| 0 Fundación | 100 |
+| 1 Comercial | 92 |
+| 2 Workflow | 94 |
+| 3 Post-ganada | 94 |
+| 4 Drive | 60 ⏸ |
+| 5 Usuarios / roles | 95 |
+| 6 Docs | 82 |
+| 7 Tesorería | 55 |
+| 8 UX | 88 |
+| 9 Obra | 10 |
+| Reportes / cliente | 80 |
 
 ---
 
-## Oleada actual (estructura post-B)
+## Reciente
 
 | # | Entrega | Estado |
 |---|---------|--------|
-| B* | Handoffs, bandeja, plantillas, OC, cobranza | ✅ |
-| + | OC con líneas de partidas | ✅ |
-| C2 | Historial por cliente | ✅ `/app/clientes/[id]` |
-| C3 | Reportes operativos | ✅ `/app/reportes` |
-| C0 | Drive ON | ⏸ diferido |
-| C1 | Caja chica | ⬜ |
-| B7 | Rol COMPRAS | ⬜ |
+| B7 | Rol **COMPRAS** separado de Ventas | ✅ |
+| — | Handoff RECOTIZACION/COMPRA → responsable Compras | ✅ |
+| — | Bandeja/áreas/workflow alineados | ✅ |
+| C0 | Drive | ⏸ |
+| C1 | Caja chica | ⬜ siguiente candidato |
+
+**Acción tuya:** en Configuración → Usuarios, asigna rol **Compras (OC / proveedores)** a Fernando (o quien opere OC).
 
 ---
 
-## Bloqueadores
+## Por qué COMPRAS antes que caja chica
 
-1. Drive — diferido.  
-2. ¿Caja chica o rol COMPRAS siguiente?
+Cierra el dueño de la etapa post-ganada (estructura del pasillo).  
+Caja chica amplía Tesorería; ya existe Bolsa.

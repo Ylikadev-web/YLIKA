@@ -63,5 +63,12 @@ export async function ensureDriveSchema() {
     )
   `;
 
+  // Rol COMPRAS (separado de Comercial/Ventas)
+  await sql`
+    INSERT INTO roles (id, codigo, nombre, es_admin, permisos)
+    SELECT gen_random_uuid(), 'COMPRAS', 'Compras', false, '{"compras":true,"oc":true}'::jsonb
+    WHERE NOT EXISTS (SELECT 1 FROM roles WHERE codigo = 'COMPRAS')
+  `;
+
   done = true;
 }

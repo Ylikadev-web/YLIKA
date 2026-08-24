@@ -212,6 +212,18 @@ async function resolveUserIdByEmail(email: string) {
   return u?.id ?? null;
 }
 
+async function resolveUserIdByRole(roleCodigo: string) {
+  const db = getDb();
+  const [row] = await db
+    .select({ id: s.users.id })
+    .from(s.users)
+    .innerJoin(s.usuarioRoles, eq(s.usuarioRoles.userId, s.users.id))
+    .innerJoin(s.roles, eq(s.usuarioRoles.rolId, s.roles.id))
+    .where(and(eq(s.roles.codigo, roleCodigo), eq(s.users.activo, true)))
+    .limit(1);
+  return row?.id ?? null;
+}
+
 export async function transitionExpedienteAction(
   expedienteId: string,
   hacia: EstatusExpediente,
@@ -231,7 +243,7 @@ export async function transitionExpedienteAction(
       ? await resolveUserIdByEmail("miguel@ylika.local")
       : user.id;
 
-  // Asigna responsable según etapa (si existe el usuario seed)
+  // Asigna responsable según etapa (si existe el usuario seed / rol)
   let responsableId = exp.responsableActualId;
   if (hacia === "PROPUESTA_ADMIN" || hacia === "COBRANZA") {
     responsableId =
@@ -245,12 +257,16 @@ export async function transitionExpedienteAction(
   ) {
     responsableId =
       (await resolveUserIdByEmail("laura@ylika.local")) ?? responsableId;
+  } else if (hacia === "RECOTIZACION" || hacia === "COMPRA") {
+    responsableId =
+      (await resolveUserIdByRole("COMPRAS")) ??
+      (await resolveUserIdByEmail("fernando@ylika.local")) ??
+      userId ??
+      responsableId;
   } else if (
     hacia === "EN_COTIZACION" ||
     hacia === "COMPARATIVO" ||
-    hacia === "COTIZACION_FINAL" ||
-    hacia === "RECOTIZACION" ||
-    hacia === "COMPRA"
+    hacia === "COTIZACION_FINAL"
   ) {
     responsableId = userId ?? responsableId;
   }

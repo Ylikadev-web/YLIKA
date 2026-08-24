@@ -29,10 +29,10 @@ const ROLE_STATUSES: Record<string, EstatusExpediente[]> = {
     "EN_COTIZACION",
     "COMPARATIVO",
     "COTIZACION_FINAL",
-    "RECOTIZACION",
-    "COMPRA",
     "ENTREGA",
   ],
+  /** Dueño de post-ganada: recotizar + OC */
+  COMPRAS: ["RECOTIZACION", "COMPRA", "ENTREGA"],
   ADMIN_FINANZAS: ["PROPUESTA_ADMIN", "COBRANZA"],
   DIRECTOR: ["REVISION_DIRECTOR", "ENVIADA"],
   ADMIN_SISTEMAS: [],
@@ -73,6 +73,7 @@ export async function listPendientesForRoles(
   // ── Entregas de HOY (prioridad) ────────────────────────────────────
   if (
     roles.includes("COMPRAS_VENTAS") ||
+    roles.includes("COMPRAS") ||
     roles.includes("ADMIN_SISTEMAS") ||
     roles.includes("ADMIN_FINANZAS")
   ) {
@@ -211,6 +212,7 @@ export async function listPendientesForRoles(
   {
     const seeVentas =
       roles.includes("COMPRAS_VENTAS") ||
+      roles.includes("COMPRAS") ||
       roles.includes("ADMIN_SISTEMAS") ||
       roles.includes("DIRECTOR");
     const seeFinanzas =
@@ -221,18 +223,28 @@ export async function listPendientesForRoles(
       const tareas = await listTareasPendientesGlobal(10);
       for (const t of tareas) {
         const isFactura = t.tipo === "FACTURAR";
+        const isCompra =
+          t.tipo === "COMPRA" || t.tipo === "RECOTIZAR_PROVEEDOR";
         if (isFactura && !seeFinanzas) continue;
         if (!isFactura && !seeVentas) continue;
+        // Tareas de compra priorizan rol COMPRAS en el owner label
+        const ownerLabel = isFactura
+          ? "Itza"
+          : isCompra && roles.includes("COMPRAS")
+            ? "Compras"
+            : isCompra
+              ? "Compras"
+              : "Ventas";
         items.push({
           id: `tarea-${t.id}`,
           title: `${t.codigo} · ${t.titulo}`,
           href: `/app/comercial/${t.expedienteId}?tab=checklist`,
-          owner: isFactura ? "Itza" : "Ventas",
+          owner: ownerLabel,
           tone: isFactura ? "mint" : "cyan",
           tip: {
             que: t.titulo,
             donde: t.empresaCodigo,
-            conQuien: isFactura ? "Itza" : "Ventas",
+            conQuien: ownerLabel,
           },
         });
       }
@@ -280,7 +292,9 @@ export async function listPendientesForRoles(
             ? "Itza"
             : r.estatus === "REVISION_DIRECTOR"
               ? "Nesim"
-              : "Ventas";
+              : r.estatus === "RECOTIZACION" || r.estatus === "COMPRA"
+                ? "Compras"
+                : "Ventas";
       const href =
         r.estatus === "PROPUESTA_ADMIN" ||
         r.estatus === "REVISION_DIRECTOR" ||
@@ -346,6 +360,7 @@ export async function listPendientesForRoles(
   // Remisiones abiertas (no hoy — ya cubiertas arriba)
   if (
     roles.includes("COMPRAS_VENTAS") ||
+    roles.includes("COMPRAS") ||
     roles.includes("ADMIN_SISTEMAS") ||
     roles.includes("ADMIN_FINANZAS")
   ) {

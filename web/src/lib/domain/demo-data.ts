@@ -35,7 +35,7 @@ export type DemoExpediente = {
 export const DEMO_TEAM = [
   { name: "Laura", roles: ["LICITACIONES", "COMPRAS_VENTAS"] },
   { name: "Miguel", roles: ["COMPRAS_VENTAS", "ADMIN_SISTEMAS"] },
-  { name: "Fernando", roles: ["COMPRAS_VENTAS"] },
+  { name: "Fernando", roles: ["COMPRAS", "COMPRAS_VENTAS"] },
   { name: "Itza", roles: ["ADMIN_FINANZAS"] },
   { name: "Nesim Zonana Bettech", roles: ["DIRECTOR"] },
 ];

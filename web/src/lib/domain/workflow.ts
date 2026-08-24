@@ -78,7 +78,7 @@ export const PIPELINE_STAGES: PipelineStage[] = [
   {
     key: "RECOTIZACION",
     label: "Recotizar",
-    owner: "Post-ganada",
+    owner: "Compras",
     color: "var(--accent)",
   },
   {

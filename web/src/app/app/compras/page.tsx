@@ -21,6 +21,12 @@ export default async function ComprasPage() {
 
   return (
     <AppShell title="Compras · Catálogo">
+      <Glass className="mb-4 px-4 py-3 text-xs text-[var(--text-muted)]">
+        Rol dedicado <strong className="text-[var(--text)]">COMPRAS</strong>{" "}
+        (OC / recotización). Asígnalo en Configuración → Usuarios. Comercial /
+        Ventas sigue cotizando; Compras cierra post-ganada.
+      </Glass>
+
       <ComprasAltaToolbar marcas={marcas} />
 
       <div className="grid gap-4 lg:grid-cols-2">

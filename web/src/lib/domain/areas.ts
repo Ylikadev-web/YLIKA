@@ -72,8 +72,8 @@ export const AREAS: AreaDef[] = [
   {
     codigo: "COMPRAS",
     nombre: "Compras",
-    descripcion: "Proveedores, marcas y recotización",
-    roles: ["COMPRAS_VENTAS", "ADMIN_SISTEMAS"],
+    descripcion: "OC, proveedores, marcas y recotización post-ganada",
+    roles: ["COMPRAS", "COMPRAS_VENTAS", "ADMIN_SISTEMAS"],
     href: "/app/compras",
     driveSubfolder: "07-Compra-Remision",
     color: "cyan",
@@ -82,7 +82,7 @@ export const AREAS: AreaDef[] = [
     codigo: "ENTREGAS",
     nombre: "Entregas",
     descripcion: "Remisiones y calendario de entrega",
-    roles: ["COMPRAS_VENTAS", "ADMIN_FINANZAS", "ADMIN_SISTEMAS"],
+    roles: ["COMPRAS", "COMPRAS_VENTAS", "ADMIN_FINANZAS", "ADMIN_SISTEMAS"],
     href: "/app/entregas",
     driveSubfolder: "07-Compra-Remision",
     color: "mint",
@@ -91,7 +91,7 @@ export const AREAS: AreaDef[] = [
     codigo: "CLIENTES",
     nombre: "Clientes",
     descripcion: "Directorio gobierno y privado",
-    roles: ["LICITACIONES", "COMPRAS_VENTAS", "ADMIN_SISTEMAS"],
+    roles: ["LICITACIONES", "COMPRAS_VENTAS", "COMPRAS", "ADMIN_SISTEMAS"],
     href: "/app/clientes",
     driveSubfolder: "01-Bases",
     color: "cyan",
@@ -112,6 +112,7 @@ export const AREAS: AreaDef[] = [
     roles: [
       "LICITACIONES",
       "COMPRAS_VENTAS",
+      "COMPRAS",
       "ADMIN_FINANZAS",
       "DIRECTOR",
       "ADMIN_SISTEMAS",
@@ -159,7 +160,8 @@ export function areasForRoles(roles: string[]): AreaDef[] {
 export const ROLE_OPTIONS = [
   { codigo: "ADMIN_SISTEMAS", nombre: "Sistemas (superusuario)" },
   { codigo: "LICITACIONES", nombre: "Licitaciones (Laura)" },
-  { codigo: "COMPRAS_VENTAS", nombre: "Comercial / Compras (Ventas)" },
+  { codigo: "COMPRAS_VENTAS", nombre: "Comercial / Ventas" },
+  { codigo: "COMPRAS", nombre: "Compras (OC / proveedores)" },
   { codigo: "ADMIN_FINANZAS", nombre: "Admin / Finanzas (Itza)" },
   { codigo: "DIRECTOR", nombre: "Dirección (Nesim)" },
 ] as const;
