@@ -110,20 +110,21 @@ void main() {
     pos *= 1.0 - 0.12 / (distCenter + 0.18);
 
     float d = length(uv - pos);
-    float radius = uOrbSize * (0.035 + seed * 0.025);
+    float radius = uOrbSize * (0.045 + seed * 0.04);
     float g = uGlow * exp(-d * d / (radius * radius + 1e-5));
     vec3 c = cycleColor(t, seed);
-    col += c * g;
+    col += c * g * 1.35;
     energy += g;
   }
 
   // Event horizon / singularity
   float r = length(uv);
-  float hole = smoothstep(0.12, 0.02, r);
-  float disc = exp(-pow(abs(r - 0.16) * 8.0, 2.0)) * 0.35;
+  float hole = smoothstep(0.14, 0.015, r);
+  float disc = exp(-pow(abs(r - 0.18) * 6.5, 2.0)) * 0.7;
   col += disc * cycleColor(t * 0.5, 0.3);
-  col *= 1.0 - hole * 0.92;
-  col *= pow(max(energy + 0.15, 0.0), 1.0 / max(uContrast, 0.2));
+  col *= 1.0 - hole * 0.95;
+  col *= pow(max(energy + 0.22, 0.0), 1.0 / max(uContrast, 0.2));
+  col += cycleColor(t * 0.25, 0.8) * exp(-r * 3.2) * 0.18;
 
   float fade = 1.0 - smoothstep(0.55, 1.15, r) * (1.0 - uDistanceFade);
   col *= fade;
@@ -326,7 +327,7 @@ export function BlackHole({
       uniforms.uSpeed.value = p.speed;
       uniforms.uZoom.value = p.zoom;
       uniforms.uOrbSize.value = p.orbSize;
-      uniforms.uGlow.value = p.glow * 12;
+      uniforms.uGlow.value = p.glow * 18;
       uniforms.uContrast.value = p.contrast;
       uniforms.uMirrorSplits.value = p.mirrorSplits;
       uniforms.uWarp.value = p.warpEnabled ? 1 : 0;
