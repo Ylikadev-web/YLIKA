@@ -10,6 +10,7 @@ import {
   RailNav,
 } from "@/components/nav/module-nav";
 import { MobileNav } from "@/components/nav/mobile-nav";
+import { UserMenu } from "@/components/nav/user-menu";
 import { useUiPrefs } from "@/components/providers/ui-prefs-provider";
 import { cn } from "@/lib/utils";
 
@@ -157,11 +158,10 @@ export function AppShell({
                 </motion.p>
               ) : null}
             </div>
-            {actions ? (
-              <div className="flex shrink-0 flex-wrap items-center gap-1.5">
-                {actions}
-              </div>
-            ) : null}
+            <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+              {actions}
+              <UserMenu variant="avatar" align="end" />
+            </div>
           </motion.header>
 
           <main className={cn(compact ? "pb-6" : "pb-8")}>{children}</main>
