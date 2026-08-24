@@ -93,22 +93,21 @@ Para YLIKA, copiar **patrones** (mesas, KPIs, Drive, folios) aporta; copiar **am
 
 | # | Entrega | Por qué | Criterio de aceptación |
 |---|---------|---------|------------------------|
-| A1 | Activar Google Drive real | Sin esto el espejo no existe | Crear expediente → carpeta real en Drive; link visible en UI · **código/UI ✅ · creds ⬜** |
+| A1 | Activar Google Drive real | Espejo humano (después) | **⏸ Diferido** — código stub listo; creds cuando prioricen Drive |
 | A2 | Checklist de documentos por etapa | Garantiza “qué falta guardar” | Por estatus: lista de docs requeridos + % completo · **✅** |
-| A3 | Upload unificado → tipo → subcarpeta Drive | Cierra el hueco de memoria | Bases, propuesta, fallo, OC, remisión, factura sincronizan · **✅** |
-| A4 | Panel “Archivo del expediente” | Una sola vista de verdad | Lista docs + estado Drive + abrir en Drive · **✅** |
+| A3 | Upload unificado → tipo → subcarpeta Drive | Cierra el hueco de memoria | Upload a expediente ✅ · sync Drive cuando se activen creds |
+| A4 | Panel “Archivo del expediente” | Una sola vista de verdad | Lista docs + % checklist · **✅** (Drive link cuando exista) |
 | A5 | Campos clave de plazos | Tiempo y forma | Junta, apertura, fallo, vigencia oferta; alertas en Inicio · **✅** |
 | A6 | Cliente obligatorio antes de enviar | Datos mínimos | Bloquear `ENVIADA` si falta cliente/contacto mínimo · **✅** |
 
-**Fuera de A:** caja chica, rol COMPRAS, parser PDF inteligente, obra.
-
-**Dependencia tuya:** A1 (creds Drive). Sin A1, A3–A4 quedan a medias (stub).
+**Oleada A (estructura de memoria):** cerrada en producto. Drive real = fase posterior, sin bloquear B.
 
 ---
 
-### Oleada B — “Tiempo y forma” (control operativo)
+### Oleada B — “Tiempo y forma” (prioridad actual · estructura operativa)
 
-**Meta:** que Laura, Ventas, Itza y Nesim vean *qué se atrasa* y *qué les toca hoy*, sin buscar en la lista general.
+**Meta:** que Laura, Ventas, Itza y Nesim vean *qué se atrasa* y *qué les toca hoy*, sin buscar en la lista general.  
+**Sin depender de Google Drive.**
 
 | # | Entrega | Por qué | Criterio de aceptación |
 |---|---------|---------|------------------------|
@@ -116,7 +115,7 @@ Para YLIKA, copiar **patrones** (mesas, KPIs, Drive, folios) aporta; copiar **am
 | B2 | Handoff explícito | Menos “¿ya lo pasó?” | Acción “Enviar a {siguiente}” escribe bitácora + asigna responsable |
 | B3 | Bandeja por rol endurecida | Inicio accionable | Solo pendientes de mi etapa; click abre expediente en tab correcto |
 | B4 | Privado vs gobierno: plantillas de checklist | Mismo motor, distinta lista | Plantilla GOB vs PRIV al crear |
-| B5 | OC post-ganada más formal | Cierra compra | Folio OC, proveedor, partidas, PDF/meta + Drive |
+| B5 | OC post-ganada más formal | Cierra compra | Folio OC, proveedor, partidas, archivo en expediente |
 | B6 | Cobranza: estados reales | Cierra el ciclo | Facturada / parcial / cobrada / vencida + monto |
 
 **Opcional B7:** rol `COMPRAS` dedicado (si confirmas).
@@ -129,6 +128,7 @@ Para YLIKA, copiar **patrones** (mesas, KPIs, Drive, folios) aporta; copiar **am
 
 | # | Entrega | Notas |
 |---|---------|-------|
+| C0 | Activar Google Drive real + backfill | Cuando la estructura ya esté en uso diario |
 | C1 | Caja chica por expediente (patrón AZTK) | Solo si Tesorería lo pide |
 | C2 | Historial por cliente (todas las solicitudes) | Valor comercial / gobierno recurrente |
 | C3 | Reportes semanales (ganadas, ciclo, montos) | Para Nesim / dirección |
@@ -138,22 +138,24 @@ Para YLIKA, copiar **patrones** (mesas, KPIs, Drive, folios) aporta; copiar **am
 
 ---
 
-## 5. Orden recomendado de ejecución (siguiente trabajo en código)
+## 5. Orden recomendado de ejecución (actualizado)
 
 ```
-A1 Drive creds (tú) ──► A2 checklist docs ──► A3 sync todos los tipos
-        │                        │
-        └────────► A4 archivo UI ◄┘
-                         │
-                    A5 plazos + A6 cliente mínimo
-                         │
-              B1 alertas ──► B2 handoff ──► B3 bandeja
-                         │
-                    B5 OC ──► B6 cobranza estados
-                         │
-                    C* según uso real
+Oleada A (memoria en app) ✅
+        │
+        ▼
+Oleada B estructura ──► B2 handoff ──► B3 bandeja ──► B1 alertas
+        │                    │
+        └─► B4 plantillas ───┴─► B5 OC ──► B6 cobranza
+        │
+        ▼
+Uso real 2–4 semanas
+        │
+        ▼
+Oleada C / Drive ON (C0) cuando prioricen espejo humano
 ```
 
+**Principio acordado con Miguel:** primero estructura del sistema (flujo, archivos en app, handoffs, post-ganada); Drive se enciende después y actualiza el espejo sin rediseñar el pasillo.
 ---
 
 ## 6. Definición de “listo para operación diaria” (DoD)
