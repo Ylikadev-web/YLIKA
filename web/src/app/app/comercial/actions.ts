@@ -97,6 +97,28 @@ export async function createExpedienteAction(formData: FormData) {
   const estatusInicial =
     sector === "GOBIERNO" ? "REVISION_REQUISITOS" : "ORDEN_COTIZAR";
 
+  // Partidas opcionales en el alta (wizard paso 1)
+  let partidasPayload: Array<{
+    numero?: number;
+    descripcion: string;
+    cantidad?: string | number;
+    unidad?: string;
+    marca?: string;
+  }> = [];
+  const rawPartidas = String(formData.get("partidasJson") || "").trim();
+  if (rawPartidas) {
+    try {
+      const parsed = JSON.parse(rawPartidas) as unknown;
+      if (Array.isArray(parsed)) {
+        partidasPayload = parsed.filter(
+          (p) => p && typeof p === "object" && String((p as { descripcion?: string }).descripcion || "").trim(),
+        ) as typeof partidasPayload;
+      }
+    } catch {
+      /* ignore bad json */
+    }
+  }
+
   const [expediente] = await db
     .insert(s.expedientes)
     .values({
@@ -108,6 +130,19 @@ export async function createExpedienteAction(formData: FormData) {
       markupPct: "12",
     })
     .returning();
+
+  if (partidasPayload.length) {
+    await db.insert(s.partidas).values(
+      partidasPayload.map((p, i) => ({
+        expedienteId: expediente.id,
+        numero: Number(p.numero) || i + 1,
+        descripcion: String(p.descripcion).trim(),
+        cantidad: String(p.cantidad ?? "1"),
+        unidad: String(p.unidad || "PZA"),
+        marcaSolicitada: p.marca ? String(p.marca) : null,
+      })),
+    );
+  }
 
   // Google Drive folders (no-op stub if credentials missing)
   try {
@@ -845,15 +880,35 @@ export async function importListaLimpiaExcelAction(formData: FormData) {
       .from(s.expedientes)
       .where(eq(s.expedientes.id, expedienteId))
       .limit(1);
-    await db.insert(s.documentos).values({
-      expedienteId,
-      empresaId: exp?.empresaId ?? null,
-      tipo: "LISTA_LIMPIA",
-      nombre: file.name,
-      storagePath: stored.path,
-      mimeType: file.type || null,
-      uploadedBy: userId ?? null,
-    });
+    const [docRow] = await db
+      .insert(s.documentos)
+      .values({
+        expedienteId,
+        empresaId: exp?.empresaId ?? null,
+        tipo: "LISTA_LIMPIA",
+        nombre: file.name,
+        storagePath: stored.path,
+        mimeType: file.type || null,
+        uploadedBy: userId ?? null,
+      })
+      .returning({ id: s.documentos.id });
+    if (docRow) {
+      try {
+        const { syncDocumentoToDrive } = await import(
+          "@/lib/storage/sync-documento-drive"
+        );
+        await syncDocumentoToDrive({
+          documentoId: docRow.id,
+          expedienteId,
+          tipo: "LISTA_LIMPIA",
+          nombre: file.name,
+          bytes: Buffer.from(buffer),
+          mimeType: file.type || null,
+        });
+      } catch {
+        /* Drive sync best-effort */
+      }
+    }
     await logBitacora(
       expedienteId,
       userId,
@@ -953,6 +1008,18 @@ export async function importCotizacionExcelAction(formData: FormData) {
         ),
       )
       .limit(1);
+    const user = await requireUser();
+    const userId =
+      user.id === "demo-miguel"
+        ? (
+            await db
+              .select({ id: s.users.id })
+              .from(s.users)
+              .where(eq(s.users.email, "miguel@ylika.local"))
+              .limit(1)
+          )[0]?.id
+        : user.id;
+
     if (cot) {
       for (const m of matched) {
         if (!m.partidaId || m.row.precio == null) continue;
@@ -970,16 +1037,15 @@ export async function importCotizacionExcelAction(formData: FormData) {
             ),
           );
       }
+      const stored = await storeFile(file, {
+        folder: `expedientes/${expedienteId}/cotizaciones`,
+        filename: `${alias}-${file.name}`,
+        contentType: file.type || undefined,
+      });
       await db
         .update(s.cotizacionesProveedor)
         .set({
-          archivoPath: (
-            await storeFile(file, {
-              folder: `expedientes/${expedienteId}/cotizaciones`,
-              filename: `${alias}-${file.name}`,
-              contentType: file.type || undefined,
-            })
-          ).path,
+          archivoPath: stored.path,
           parseStatus: "PARSED",
           parseMeta: {
             matched: lineas.length,
@@ -988,6 +1054,41 @@ export async function importCotizacionExcelAction(formData: FormData) {
           },
         })
         .where(eq(s.cotizacionesProveedor.id, cot.id));
+
+      const [expMeta] = await db
+        .select({ empresaId: s.expedientes.empresaId })
+        .from(s.expedientes)
+        .where(eq(s.expedientes.id, expedienteId))
+        .limit(1);
+      const [docRow] = await db
+        .insert(s.documentos)
+        .values({
+          expedienteId,
+          empresaId: expMeta?.empresaId ?? null,
+          tipo: "COTIZACION_PROVEEDOR",
+          nombre: `${alias}-${file.name}`,
+          storagePath: stored.path,
+          mimeType: file.type || null,
+          uploadedBy: userId ?? null,
+        })
+        .returning({ id: s.documentos.id });
+      if (docRow) {
+        try {
+          const { syncDocumentoToDrive } = await import(
+            "@/lib/storage/sync-documento-drive"
+          );
+          await syncDocumentoToDrive({
+            documentoId: docRow.id,
+            expedienteId,
+            tipo: "COTIZACION_PROVEEDOR",
+            nombre: `${alias}-${file.name}`,
+            bytes: Buffer.from(buffer),
+            mimeType: file.type || null,
+          });
+        } catch {
+          /* Drive sync best-effort */
+        }
+      }
     }
 
     await db
@@ -995,17 +1096,6 @@ export async function importCotizacionExcelAction(formData: FormData) {
       .set({ estatus: "COMPARATIVO", updatedAt: new Date() })
       .where(eq(s.expedientes.id, expedienteId));
 
-    const user = await requireUser();
-    const userId =
-      user.id === "demo-miguel"
-        ? (
-            await db
-              .select({ id: s.users.id })
-              .from(s.users)
-              .where(eq(s.users.email, "miguel@ylika.local"))
-              .limit(1)
-          )[0]?.id
-        : user.id;
     await logBitacora(
       expedienteId,
       userId,
