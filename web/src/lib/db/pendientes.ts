@@ -4,6 +4,7 @@ import { listPendientesAprobacion } from "@/lib/db/bolsa";
 import { calcEstadoDoc } from "@/lib/db/queries";
 import { listTareasPendientesGlobal } from "@/lib/db/tareas";
 import * as s from "@/lib/db/schema";
+import { expedienteHref } from "@/lib/domain/handoff";
 import { ESTATUS_LABEL, type EstatusExpediente } from "@/lib/domain/workflow";
 
 export type PendienteItem = {
@@ -181,9 +182,12 @@ export async function listPendientesForRoles(
     for (const d of docs) {
       const estado = calcEstadoDoc(d.fechaVencimiento);
       if (estado !== "POR_VENCER" && estado !== "VENCIDO") continue;
+      const isConstancia = /constancia|opinión|opinion|sat|imss|infonavit|csf/i.test(
+        d.nombre,
+      );
       items.push({
         id: `doc-${d.id}`,
-        title: `${estado === "VENCIDO" ? "Doc vencido" : "Doc por vencer"} · ${d.empresaCodigo} · ${d.nombre}`,
+        title: `${estado === "VENCIDO" ? "Vencido" : "≤30 días"} · ${isConstancia ? "Constancia" : "Doc"} · ${d.empresaCodigo} · ${d.nombre}`,
         href: "/app/licitaciones",
         owner: "Laura",
         tone: estado === "VENCIDO" ? "rose" : "amber",
@@ -199,7 +203,7 @@ export async function listPendientesForRoles(
             : undefined,
         },
       });
-      if (items.filter((i) => i.id.startsWith("doc-")).length >= 6) break;
+      if (items.filter((i) => i.id.startsWith("doc-")).length >= 12) break;
     }
   }
 
@@ -282,7 +286,7 @@ export async function listPendientesForRoles(
         r.estatus === "REVISION_DIRECTOR" ||
         r.estatus === "ENVIADA"
           ? "/app/propuestas"
-          : `/app/comercial/${r.id}`;
+          : expedienteHref(r.id, r.estatus);
 
       const rem = remByExp.get(r.id);
       const tip =
@@ -377,7 +381,7 @@ export async function listPendientesForRoles(
             ? ` · ${r.fechaProgramada.toLocaleDateString("es-MX", { day: "numeric", month: "short" })}`
             : ""
         }`,
-        href: `/app/comercial/${r.expedienteId}`,
+        href: `/app/comercial/${r.expedienteId}?tab=historial`,
         owner: "Operaciones",
         tone: "cyan",
         tip: {
@@ -418,7 +422,7 @@ export async function listPendientesForRoles(
       items.push({
         id: `cambio-${c.id}`,
         title: `Autorizar ${c.tipo} · ${c.codigo}`,
-        href: `/app/comercial/${c.expedienteId}`,
+        href: `/app/comercial/${c.expedienteId}?tab=edicion`,
         owner: "Itza/Nesim",
         tone: "rose",
       });
@@ -505,6 +509,58 @@ export async function listPendientesForRoles(
     }
   } catch {
     /* columnas de plazos pueden no existir aún en DB fría */
+  }
+
+  // ── Cobranza abierta (Itza) ────────────────────────────────────────
+  if (
+    roles.includes("ADMIN_FINANZAS") ||
+    roles.includes("ADMIN_SISTEMAS") ||
+    roles.includes("DIRECTOR")
+  ) {
+    try {
+      const cobRows = await db
+        .select({
+          id: s.cobranzas.id,
+          estatus: s.cobranzas.estatus,
+          montoTotal: s.cobranzas.montoTotal,
+          fechaVencimiento: s.cobranzas.fechaVencimiento,
+          codigo: s.expedientes.codigo,
+          expedienteId: s.expedientes.id,
+        })
+        .from(s.cobranzas)
+        .innerJoin(
+          s.expedientes,
+          eq(s.cobranzas.expedienteId, s.expedientes.id),
+        )
+        .where(
+          and(
+            ne(s.cobranzas.estatus, "COBRADA"),
+            ne(s.expedientes.estatus, "CERRADO"),
+          ),
+        )
+        .limit(8);
+      for (const c of cobRows) {
+        const vencida =
+          c.estatus === "VENCIDA" ||
+          (c.fechaVencimiento &&
+            new Date(c.fechaVencimiento) < today0);
+        items.push({
+          id: `cob-${c.id}`,
+          title: `Cobranza ${c.estatus}${vencida && c.estatus !== "VENCIDA" ? " · vence" : ""} · ${c.codigo}`,
+          href: `/app/comercial/${c.expedienteId}?tab=checklist`,
+          owner: "Itza",
+          tone: vencida || c.estatus === "VENCIDA" ? "rose" : "mint",
+          tip: {
+            que: `Monto ${c.montoTotal ?? "—"}`,
+            cuando: c.fechaVencimiento
+              ? new Date(c.fechaVencimiento).toLocaleDateString("es-MX")
+              : undefined,
+          },
+        });
+      }
+    } catch {
+      /* table may not exist yet */
+    }
   }
 
   return items;

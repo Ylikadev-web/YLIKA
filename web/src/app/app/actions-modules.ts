@@ -463,6 +463,25 @@ export async function marcarRemisionEntregadaAction(formData: FormData) {
     aEstatus: "COBRANZA",
   });
 
+  try {
+    const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+    await ensureDriveSchema();
+    const [cob] = await db
+      .select({ id: s.cobranzas.id })
+      .from(s.cobranzas)
+      .where(eq(s.cobranzas.expedienteId, rem.expedienteId))
+      .limit(1);
+    if (!cob) {
+      await db.insert(s.cobranzas).values({
+        expedienteId: rem.expedienteId,
+        remisionId: rem.id,
+        estatus: "PENDIENTE",
+      });
+    }
+  } catch {
+    /* cobranzas table may self-heal next request */
+  }
+
   // Draft factura (placeholder) + tarea FACTURAR para Itza
   const draftName = `FACT-${rem.folio}.pdf`;
   const existingDoc = await db

@@ -12,6 +12,9 @@ import { ChecklistPanel } from "@/components/comercial/checklist-panel";
 import { BasesPanel } from "@/components/comercial/bases-panel";
 import { ArchivoPanel } from "@/components/comercial/archivo-panel";
 import { PlazosPanel } from "@/components/comercial/plazos-panel";
+import { HandoffPanel } from "@/components/comercial/handoff-panel";
+import { OrdenCompraPanel } from "@/components/comercial/orden-compra-panel";
+import { CobranzaPanel } from "@/components/comercial/cobranza-panel";
 import { DeleteSolicitudButton } from "@/components/comercial/delete-solicitud-button";
 import { ProcessTree } from "@/components/comercial/process-tree";
 import { WorkflowPanel } from "@/components/comercial/workflow-panel";
@@ -20,8 +23,10 @@ import { defaultTabForEstatus } from "@/lib/domain/expediente-utils";
 import { checklistForExpediente } from "@/lib/domain/doc-checklist";
 import { listCambiosPendientesExpediente } from "@/app/app/comercial/edit-actions";
 import {
+  getCobranzaExpediente,
   getExpedienteById,
   listDocumentosForExpediente,
+  listOrdenesCompraExpediente,
 } from "@/lib/db/queries";
 import { ensureDriveSchema } from "@/lib/db/ensure-drive-schema";
 import { ensureRequisitosBases } from "@/lib/db/requisitos";
@@ -52,6 +57,8 @@ export default async function ExpedientePage({
     marcas,
     tareas,
     documentos,
+    ordenes,
+    cobranza,
   ] = await Promise.all([
     getExpedienteById(id),
     auth(),
@@ -61,10 +68,12 @@ export default async function ExpedientePage({
     listMarcas(),
     listTareasExpediente(id),
     listDocumentosForExpediente(id),
+    listOrdenesCompraExpediente(id),
+    getCobranzaExpediente(id),
   ]);
   if (!exp) notFound();
 
-  const requisitos = await ensureRequisitosBases(id);
+  const requisitos = await ensureRequisitosBases(id, exp.sector);
   const basesPend = requisitos.filter((r) => r.cumple == null).length;
 
   const roles = (session?.user as { roles?: string[] } | undefined)?.roles ?? [];
@@ -148,6 +157,8 @@ export default async function ExpedientePage({
             badge: tareasPend || null,
             hidden:
               tareas.length === 0 &&
+              ordenes.length === 0 &&
+              !cobranza &&
               ![
                 "GANADA",
                 "RECOTIZACION",
@@ -222,6 +233,7 @@ export default async function ExpedientePage({
                 fechaFallo={exp.fechaFallo}
                 vigenciaOfertaHasta={exp.vigenciaOfertaHasta}
               />
+              <HandoffPanel expedienteId={exp.id} estatus={exp.estatus} />
               <WorkflowPanel
                 expedienteId={exp.id}
                 estatus={exp.estatus}
@@ -241,11 +253,47 @@ export default async function ExpedientePage({
           ),
           bases: <BasesPanel expedienteId={exp.id} requisitos={requisitos} />,
           checklist: (
-            <ChecklistPanel
-              expedienteId={exp.id}
-              tareas={tareas}
-              estatus={exp.estatus}
-            />
+            <div className="space-y-3">
+              <ChecklistPanel
+                expedienteId={exp.id}
+                tareas={tareas}
+                estatus={exp.estatus}
+              />
+              <OrdenCompraPanel
+                expedienteId={exp.id}
+                proveedores={proveedores.map((p) => ({
+                  id: p.id,
+                  razonSocial: p.razonSocial,
+                }))}
+                ordenes={ordenes}
+                canEmit={[
+                  "GANADA",
+                  "RECOTIZACION",
+                  "COMPRA",
+                  "ENTREGA",
+                  "COBRANZA",
+                ].includes(exp.estatus)}
+              />
+              {["COBRANZA", "ENTREGA", "CERRADO"].includes(exp.estatus) ||
+              cobranza ? (
+                <CobranzaPanel
+                  expedienteId={exp.id}
+                  cobranza={
+                    cobranza
+                      ? {
+                          id: cobranza.id,
+                          estatus: cobranza.estatus,
+                          montoTotal: cobranza.montoTotal,
+                          montoCobrado: cobranza.montoCobrado,
+                          fechaFactura: cobranza.fechaFactura,
+                          fechaVencimiento: cobranza.fechaVencimiento,
+                          notas: cobranza.notas,
+                        }
+                      : null
+                  }
+                />
+              ) : null}
+            </div>
           ),
           edicion: (
             <EditPanel

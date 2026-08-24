@@ -1332,3 +1332,282 @@ export async function updateExpedientePlazosAction(formData: FormData) {
     };
   }
 }
+
+/** Handoff explícito: transición + nota en bitácora + responsable por etapa */
+export async function handoffExpedienteAction(input: {
+  expedienteId: string;
+  hacia: EstatusExpediente;
+  nota?: string;
+}) {
+  try {
+    const { expedienteId, hacia, nota } = input;
+    if (!expedienteId || !hacia) {
+      return { ok: false as const, error: "Datos incompletos" };
+    }
+
+    if (hacia === "ENVIADA") {
+      const fd = new FormData();
+      fd.set("expedienteId", expedienteId);
+      await marcarEnviadaAction(fd);
+      return { ok: true as const };
+    }
+
+    if (hacia === "GANADA") {
+      const fd = new FormData();
+      fd.set("expedienteId", expedienteId);
+      await marcarGanadaAction(fd);
+      return { ok: true as const };
+    }
+
+    if (hacia === "PERDIDA") {
+      const fd = new FormData();
+      fd.set("expedienteId", expedienteId);
+      await marcarPerdidaAction(fd);
+      return { ok: true as const };
+    }
+
+    await transitionExpedienteAction(
+      expedienteId,
+      hacia,
+      nota?.trim() || `Handoff → ${hacia}`,
+    );
+
+    if (hacia === "COBRANZA") {
+      await ensureCobranzaRow(expedienteId);
+    }
+
+    return { ok: true as const };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "Handoff falló",
+    };
+  }
+}
+
+async function ensureCobranzaRow(expedienteId: string) {
+  const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+  await ensureDriveSchema();
+  const db = getDb();
+  const [existing] = await db
+    .select({ id: s.cobranzas.id })
+    .from(s.cobranzas)
+    .where(eq(s.cobranzas.expedienteId, expedienteId))
+    .limit(1);
+  if (existing) return existing.id;
+  const [row] = await db
+    .insert(s.cobranzas)
+    .values({ expedienteId, estatus: "PENDIENTE" })
+    .returning({ id: s.cobranzas.id });
+  return row?.id;
+}
+
+export async function emitirOrdenCompraAction(formData: FormData) {
+  try {
+    const user = await requireUser();
+    const expedienteId = String(formData.get("expedienteId") || "");
+    const proveedorId = String(formData.get("proveedorId") || "");
+    const montoRaw = String(formData.get("montoTotal") || "").trim();
+    if (!expedienteId || !proveedorId) {
+      return { ok: false as const, error: "Expediente y proveedor requeridos" };
+    }
+
+    const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+    await ensureDriveSchema();
+
+    const db = getDb();
+    const userId =
+      user.id === "demo-miguel"
+        ? await resolveUserIdByEmail("miguel@ylika.local")
+        : user.id;
+
+    const [prov] = await db
+      .select({
+        id: s.proveedores.id,
+        razonSocial: s.proveedores.razonSocial,
+      })
+      .from(s.proveedores)
+      .where(eq(s.proveedores.id, proveedorId))
+      .limit(1);
+    if (!prov) return { ok: false as const, error: "Proveedor no encontrado" };
+
+    const [exp] = await db
+      .select({
+        codigo: s.expedientes.codigo,
+        empresaId: s.expedientes.empresaId,
+      })
+      .from(s.expedientes)
+      .where(eq(s.expedientes.id, expedienteId))
+      .limit(1);
+    if (!exp) return { ok: false as const, error: "Expediente no encontrado" };
+
+    const seq = String(Date.now()).slice(-4);
+    const folio = `OC-${exp.codigo}-${seq}`;
+
+    const [doc] = await db
+      .insert(s.documentos)
+      .values({
+        expedienteId,
+        empresaId: exp.empresaId,
+        tipo: "OC",
+        nombre: `${folio}.pdf`,
+        storagePath: `oc/${folio}`,
+        uploadedBy: userId ?? null,
+      })
+      .returning({ id: s.documentos.id });
+
+    const [oc] = await db
+      .insert(s.ordenesCompra)
+      .values({
+        expedienteId,
+        folio,
+        proveedorId: prov.id,
+        proveedorNombre: prov.razonSocial,
+        estatus: "EMITIDA",
+        montoTotal: montoRaw || null,
+        documentoId: doc?.id ?? null,
+        creadoPor: userId ?? null,
+      })
+      .returning({ id: s.ordenesCompra.id, folio: s.ordenesCompra.folio });
+
+    await db
+      .update(s.expedientes)
+      .set({ estatus: "COMPRA", updatedAt: new Date() })
+      .where(eq(s.expedientes.id, expedienteId));
+
+    await logBitacora(
+      expedienteId,
+      userId ?? undefined,
+      `OC emitida ${folio} · ${prov.razonSocial}`,
+      undefined,
+      "COMPRA",
+      { folio, proveedorId: prov.id, montoTotal: montoRaw || null },
+    );
+
+    // Marca tarea COMPRA del checklist si existe
+    await db
+      .update(s.expedienteTareas)
+      .set({ estado: "HECHO", completedAt: new Date() })
+      .where(
+        and(
+          eq(s.expedienteTareas.expedienteId, expedienteId),
+          eq(s.expedienteTareas.tipo, "COMPRA"),
+          eq(s.expedienteTareas.estado, "PENDIENTE"),
+        ),
+      );
+
+    revalidatePath(`/app/comercial/${expedienteId}`);
+    revalidatePath("/app/compras");
+    revalidatePath("/app/documentos");
+    revalidatePath("/app");
+    return { ok: true as const, folio: oc?.folio ?? folio };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "No se pudo emitir OC",
+    };
+  }
+}
+
+export async function updateCobranzaAction(formData: FormData) {
+  try {
+    const user = await requireUser();
+    const expedienteId = String(formData.get("expedienteId") || "");
+    if (!expedienteId) {
+      return { ok: false as const, error: "Expediente requerido" };
+    }
+
+    const estatus = String(formData.get("estatus") || "PENDIENTE");
+    const allowed = new Set([
+      "PENDIENTE",
+      "FACTURADA",
+      "PARCIAL",
+      "COBRADA",
+      "VENCIDA",
+    ]);
+    if (!allowed.has(estatus)) {
+      return { ok: false as const, error: "Estado de cobranza inválido" };
+    }
+
+    const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+    await ensureDriveSchema();
+
+    const db = getDb();
+    const userId =
+      user.id === "demo-miguel"
+        ? await resolveUserIdByEmail("miguel@ylika.local")
+        : user.id;
+
+    const payload = {
+      estatus,
+      montoTotal: String(formData.get("montoTotal") || "").trim() || null,
+      montoCobrado: String(formData.get("montoCobrado") || "").trim() || null,
+      fechaFactura: parseOptionalDate(
+        String(formData.get("fechaFactura") || ""),
+      ),
+      fechaVencimiento: parseOptionalDate(
+        String(formData.get("fechaVencimiento") || ""),
+      ),
+      notas: String(formData.get("notas") || "").trim() || null,
+      updatedAt: new Date(),
+    };
+
+    const [existing] = await db
+      .select({ id: s.cobranzas.id })
+      .from(s.cobranzas)
+      .where(eq(s.cobranzas.expedienteId, expedienteId))
+      .limit(1);
+
+    if (existing) {
+      await db
+        .update(s.cobranzas)
+        .set(payload)
+        .where(eq(s.cobranzas.id, existing.id));
+    } else {
+      await db.insert(s.cobranzas).values({ expedienteId, ...payload });
+    }
+
+    if (estatus === "COBRADA") {
+      await db
+        .update(s.expedientes)
+        .set({ estatus: "CERRADO", updatedAt: new Date() })
+        .where(eq(s.expedientes.id, expedienteId));
+    } else {
+      await db
+        .update(s.expedientes)
+        .set({ estatus: "COBRANZA", updatedAt: new Date() })
+        .where(eq(s.expedientes.id, expedienteId));
+    }
+
+    await logBitacora(
+      expedienteId,
+      userId ?? undefined,
+      `Cobranza → ${estatus}`,
+      undefined,
+      estatus === "COBRADA" ? "CERRADO" : "COBRANZA",
+      payload as unknown as Record<string, unknown>,
+    );
+
+    if (estatus === "FACTURADA" || estatus === "COBRADA") {
+      await db
+        .update(s.expedienteTareas)
+        .set({ estado: "HECHO", completedAt: new Date() })
+        .where(
+          and(
+            eq(s.expedienteTareas.expedienteId, expedienteId),
+            eq(s.expedienteTareas.tipo, "FACTURAR"),
+            eq(s.expedienteTareas.estado, "PENDIENTE"),
+          ),
+        );
+    }
+
+    revalidatePath(`/app/comercial/${expedienteId}`);
+    revalidatePath("/app");
+    return { ok: true as const };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "No se pudo actualizar cobranza",
+    };
+  }
+}

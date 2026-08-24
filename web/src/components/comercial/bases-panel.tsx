@@ -13,6 +13,7 @@ type Req = {
   obligatorio: boolean;
   cumple: boolean | null;
   motivo: string | null;
+  fuente?: string | null;
 };
 
 export function BasesPanel({
@@ -28,6 +29,10 @@ export function BasesPanel({
   const ok = requisitos.filter((r) => r.cumple === true).length;
   const no = requisitos.filter((r) => r.cumple === false).length;
   const pend = requisitos.filter((r) => r.cumple == null).length;
+  const plantilla =
+    requisitos[0]?.fuente === "PRIVADO_TEMPLATE"
+      ? "Plantilla privado"
+      : "Plantilla gobierno / bases";
 
   function setCumple(id: string, cumple: boolean | null) {
     start(async () => {
@@ -53,6 +58,8 @@ export function BasesPanel({
           </p>
         </div>
         <p className="text-[11px] text-[var(--text-muted)]">
+          {plantilla}
+          {" · "}
           <span className="text-[var(--accent)]">{ok} sí</span>
           {" · "}
           <span className="text-[var(--danger)]">{no} no</span>

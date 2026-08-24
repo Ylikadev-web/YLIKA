@@ -2,27 +2,26 @@
 
 > Flujo: **Laura → Ventas → Itza → Nesim → (si gana) recotización → compra → remisión → cobranza**.  
 > Propuesta: [`PROPUESTA-IMPLEMENTACION.md`](./PROPUESTA-IMPLEMENTACION.md)  
-> **Prioridad acordada:** estructura del sistema primero · Drive diferido (después se enciende el espejo).
+> **Prioridad:** estructura (Oleada B) · Drive diferido.
 
 ---
 
 ## Expectativa final (visión operativa diaria)
 
 ```
-██████████████░░░░░░  68%
+████████████████░░░░  78%
 ```
 
-El % no baja por diferir Drive: la app ya guarda archivos en expediente. Drive solo añade espejo humano.
+Antes ~68%. Subió con handoffs, bandeja con tabs, plantillas GOB/PRIV, OC formal y cobranza con estados.
 
-| Criterio “listo para operación diaria” | Estado |
-|----------------------------------------|--------|
-| Workflow Laura→…→cobranza usable | ~85% → **siguiente foco Oleada B** |
-| Memoria completa por solicitud (en app) | ~75% (Archivo + checklist) |
-| Drive espejo | ⏸ Diferido (código stub listo) |
-| Dashboards por área accionables | ~80% |
-| Admin usuarios/áreas | ~90% |
-| Parsers PDF/Excel | ~70% |
-| Caja chica / COMPRAS / obra | Fase 2 / C |
+| Criterio | Estado |
+|----------|--------|
+| Workflow Laura→…→cobranza | ~92% |
+| Memoria en app (Archivo) | ~75% |
+| Drive espejo | ⏸ Diferido |
+| Dashboards / bandeja | ~90% |
+| Post-ganada OC + cobranza | ~85% |
+| Admin usuarios | ~90% |
 
 ---
 
@@ -33,43 +32,39 @@ El % no baja por diferir Drive: la app ya guarda archivos en expediente. Drive s
 ████████████████████  100%
 ```
 
-### Gate 1 — Comercial núcleo
+### Gate 1 — Comercial
 ```
 ██████████████████░░  92%
 ```
 
-### Gate 2 — Workflow roles ← **prioridad estructura**
+### Gate 2 — Workflow roles
 ```
-█████████████████░░░  85%
+██████████████████░░  92%
 ```
-✅ Pipeline · bandeja · bloqueo ENVIADA  
-⬜ Handoff explícito · bandeja endurecida · plantillas GOB/PRIV (Oleada B)
+✅ Handoff explícito · ✅ bandeja con `?tab=` · ✅ plantillas GOB/PRIV · ✅ alertas constancias ≤30d
 
-### Gate 3 — Post-ganada ← **prioridad estructura**
+### Gate 3 — Post-ganada
 ```
-███████████████░░░░░  75%
+█████████████████░░░  88%
 ```
-✅ Recotización / remisión / cobranza draft  
-⬜ OC formal · estados cobranza reales (Oleada B)
+✅ OC formal (`ordenes_compra`) · ✅ cobranza estados + montos · ⬜ partidas línea OC detalladas
 
 ### Gate 4 — Google Drive
 ```
-████████████░░░░░░░░  60%  ⏸ en pausa
+████████████░░░░░░░░  60%  ⏸
 ```
-Código/UI listos; **no pedimos creds ahora**. Se retoma en C0.
 
-### Gate 5 — Usuarios / áreas
+### Gate 5 — Usuarios
 ```
 ██████████████████░░  90%
 ```
 
-### Gate 6 — Documentos (en app)
+### Gate 6 — Documentos
 ```
 ████████████████░░░░  82%
 ```
-✅ Archivo · checklist · upload tipado (sin depender de Drive)
 
-### Gate 7 — Tesorería / Bolsa
+### Gate 7 — Tesorería
 ```
 ████████████░░░░░░░░  55%
 ```
@@ -86,27 +81,24 @@ Código/UI listos; **no pedimos creds ahora**. Se retoma en C0.
 
 ---
 
-## Oleadas
+## Oleada B — checklist
 
-| Oleada | Foco | Estado |
-|--------|------|--------|
-| A | Memoria en expediente (Archivo, plazos, cliente mín.) | ✅ cerrada (Drive ON diferido) |
-| **B** | **Estructura operativa (handoffs, OC, cobranza, alertas)** | **← siguiente** |
-| C | Empresa + **Drive ON (C0)** + caja chica / reportes | Después de usar B |
+| # | Entrega | Estado |
+|---|---------|--------|
+| B2 | Handoff explícito | ✅ panel Resumen |
+| B3 | Bandeja con tabs correctos | ✅ |
+| B1 | Alertas constancias / plazos | ✅ endurecidas |
+| B4 | Plantillas checklist GOB vs PRIV | ✅ |
+| B5 | OC formal | ✅ emitir + doc tipo OC |
+| B6 | Cobranza estados + montos | ✅ |
+| B7 | Rol COMPRAS | ⬜ opcional |
 
-### Siguiente cola (B) — sin Drive
-
-1. B2 Handoff explícito entre roles  
-2. B3 Bandeja Inicio más accionable  
-3. B1 Alertas constancias / plazos endurecidas  
-4. B4 Plantillas checklist GOB vs PRIV  
-5. B5 OC formal post-ganada  
-6. B6 Estados de cobranza  
+**Siguiente (C / uso real):** Drive ON cuando prioricen · caja chica · reportes · afinar parsers.
 
 ---
 
-## Bloqueadores / lo que necesito de ti
+## Bloqueadores
 
-1. ~~Google Drive creds~~ — **no ahora** (decisión tuya).  
-2. Confirmar: ¿arranquemos Oleada B en ese orden?  
-3. ¿Rol `COMPRAS` en B o después?
+1. Drive — diferido (ok).  
+2. ¿Rol `COMPRAS`?  
+3. Samples PDF/Excel opcionales.

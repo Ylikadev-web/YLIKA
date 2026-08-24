@@ -763,6 +763,41 @@ export const expedienteTareas = pgTable("expediente_tareas", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+/** Órdenes de compra formales post-ganada */
+export const ordenesCompra = pgTable("ordenes_compra", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  expedienteId: uuid("expediente_id")
+    .notNull()
+    .references(() => expedientes.id, { onDelete: "cascade" }),
+  folio: text("folio").notNull().unique(),
+  proveedorId: uuid("proveedor_id").references(() => proveedores.id),
+  proveedorNombre: text("proveedor_nombre").notNull(),
+  estatus: text("estatus").notNull().default("EMITIDA"),
+  montoTotal: numeric("monto_total", { precision: 18, scale: 2 }),
+  notas: text("notas"),
+  documentoId: uuid("documento_id").references(() => documentos.id),
+  creadoPor: uuid("creado_por").references(() => users.id),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
+/** Cobranza por expediente (estados + montos) */
+export const cobranzas = pgTable("cobranzas", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  expedienteId: uuid("expediente_id")
+    .notNull()
+    .unique()
+    .references(() => expedientes.id, { onDelete: "cascade" }),
+  remisionId: uuid("remision_id").references(() => remisiones.id),
+  estatus: text("estatus").notNull().default("PENDIENTE"),
+  montoTotal: numeric("monto_total", { precision: 18, scale: 2 }),
+  montoCobrado: numeric("monto_cobrado", { precision: 18, scale: 2 }),
+  fechaFactura: timestamp("fecha_factura", { mode: "date" }),
+  fechaVencimiento: timestamp("fecha_vencimiento", { mode: "date" }),
+  notas: text("notas"),
+  updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
+});
+
 export const usersRelations = relations(users, ({ many }) => ({
   roles: many(usuarioRoles),
   empresas: many(usuarioEmpresas),

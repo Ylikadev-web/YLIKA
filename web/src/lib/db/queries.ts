@@ -198,6 +198,40 @@ export async function listDocumentosForExpediente(expedienteId: string) {
     .orderBy(desc(s.documentos.createdAt));
 }
 
+export async function listOrdenesCompraExpediente(expedienteId: string) {
+  const db = getDb();
+  try {
+    return await db
+      .select({
+        id: s.ordenesCompra.id,
+        folio: s.ordenesCompra.folio,
+        proveedorNombre: s.ordenesCompra.proveedorNombre,
+        estatus: s.ordenesCompra.estatus,
+        montoTotal: s.ordenesCompra.montoTotal,
+        createdAt: s.ordenesCompra.createdAt,
+      })
+      .from(s.ordenesCompra)
+      .where(eq(s.ordenesCompra.expedienteId, expedienteId))
+      .orderBy(desc(s.ordenesCompra.createdAt));
+  } catch {
+    return [];
+  }
+}
+
+export async function getCobranzaExpediente(expedienteId: string) {
+  const db = getDb();
+  try {
+    const [row] = await db
+      .select()
+      .from(s.cobranzas)
+      .where(eq(s.cobranzas.expedienteId, expedienteId))
+      .limit(1);
+    return row ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function listDocumentosEmpresa(empresaId?: string) {
   const db = getDb();
   const base = db
