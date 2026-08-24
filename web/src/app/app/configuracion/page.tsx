@@ -9,6 +9,7 @@ import {
   LayoutPanelLeft,
   Palette,
   Sparkles,
+  Users,
   Wallet,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
@@ -305,7 +306,18 @@ export default function ConfiguracionPage() {
           </div>
         </Glass>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <Link href="/app/configuracion/usuarios">
+            <Glass className="flex h-full items-start gap-3 p-5 transition hover:ring-1 hover:ring-[var(--glass-border)]">
+              <Users className="mt-0.5 h-5 w-5 text-[var(--accent)]" />
+              <div>
+                <h3 className="display text-base font-semibold">Usuarios y áreas</h3>
+                <p className="mt-1 text-xs text-[var(--text-muted)]">
+                  Alta, roles y dashboards personalizados
+                </p>
+              </div>
+            </Glass>
+          </Link>
           <Link href="/app/configuracion/workflow">
             <Glass className="flex h-full items-start gap-3 p-5 transition hover:ring-1 hover:ring-[var(--glass-border)]">
               <GitBranch className="mt-0.5 h-5 w-5 text-[var(--accent)]" />

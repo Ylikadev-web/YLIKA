@@ -290,6 +290,9 @@ export const expedientes = pgTable("expedientes", {
   aptoNotas: text("apto_notas"),
   markupPct: numeric("markup_pct", { precision: 8, scale: 4 }).default("0"),
   criterioSeleccion: text("criterio_seleccion").notNull().default("PRECIO"),
+  /** Google Drive folder id for this expediente root */
+  driveFolderId: text("drive_folder_id"),
+  driveWebViewLink: text("drive_web_view_link"),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
 });
@@ -475,6 +478,8 @@ export const documentos = pgTable("documentos", {
   nombre: text("nombre").notNull(),
   storagePath: text("storage_path").notNull(),
   mimeType: text("mime_type"),
+  driveFileId: text("drive_file_id"),
+  driveWebViewLink: text("drive_web_view_link"),
   uploadedBy: uuid("uploaded_by").references(() => users.id),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });

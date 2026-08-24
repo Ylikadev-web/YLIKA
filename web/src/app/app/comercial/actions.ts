@@ -109,6 +109,50 @@ export async function createExpedienteAction(formData: FormData) {
     })
     .returning();
 
+  // Google Drive folders (no-op stub if credentials missing)
+  try {
+    const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+    await ensureDriveSchema();
+    const [emp] = await db
+      .select({ codigo: s.empresas.codigo })
+      .from(s.empresas)
+      .where(eq(s.empresas.id, empresaId))
+      .limit(1);
+    const { ensureExpedienteDriveFolders } = await import("@/lib/storage/drive");
+    const drive = await ensureExpedienteDriveFolders({
+      empresaCodigo: emp?.codigo ?? "YLIKA",
+      codigo,
+      titulo,
+    });
+    await db
+      .update(s.expedientes)
+      .set({
+        driveFolderId: drive.folderId,
+        driveWebViewLink: drive.webViewLink,
+        updatedAt: new Date(),
+      })
+      .where(eq(s.expedientes.id, expediente.id));
+    await logBitacora(
+      expediente.id,
+      userId,
+      drive.provider === "google-drive"
+        ? "Carpeta Google Drive creada"
+        : "Drive stub (sin credenciales GOOGLE_DRIVE_*)",
+      undefined,
+      undefined,
+      { folderId: drive.folderId, provider: drive.provider },
+    );
+  } catch (e) {
+    await logBitacora(
+      expediente.id,
+      userId,
+      "Drive no disponible al crear expediente",
+      undefined,
+      undefined,
+      { error: e instanceof Error ? e.message : "unknown" },
+    );
+  }
+
   await logBitacora(
     expediente.id,
     userId,
