@@ -118,7 +118,7 @@ Para YLIKA, copiar **patrones** (mesas, KPIs, Drive, folios) aporta; copiar **am
 | B5 | OC post-ganada más formal | Cierra compra | Folio OC, proveedor, partidas, archivo en expediente · **✅** (folio+proveedor+monto; líneas OC = después) |
 | B6 | Cobranza: estados reales | Cierra el ciclo | Facturada / parcial / cobrada / vencida + monto · **✅** |
 
-**Opcional B7:** rol `COMPRAS` dedicado (si confirmas).
+**Opcional B7:** rol `COMPRAS` dedicado · **✅ implementado** (asignar en Usuarios).
 
 ---
 
