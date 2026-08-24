@@ -145,3 +145,10 @@ YLIKA Ops/
 
 > AZTK aporta **mesas, KPIs, Drive y rigor operativo**.  
 > YLIKA conserva **el workflow humano Laura→Ventas→Itza→Nesim** y no se diluye en 20 submódulos.
+
+---
+
+## 7. Siguiente documento
+
+Roadmap auditado (qué implementar / qué no / criterios de aceptación):  
+→ [`PROPUESTA-IMPLEMENTACION.md`](./PROPUESTA-IMPLEMENTACION.md)

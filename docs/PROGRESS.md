@@ -1,7 +1,8 @@
 # YLIKA Ops — Progress
 
 > Flujo: **Laura → Ventas → Itza → Nesim → (si gana) recotización → compra → remisión → cobranza**.  
-> Actualizado: wizard partidas-primero + sync Drive en uploads.
+> Actualizado: wizard partidas-primero + sync Drive en uploads.  
+> **Propuesta auditada de qué implementar:** [`PROPUESTA-IMPLEMENTACION.md`](./PROPUESTA-IMPLEMENTACION.md) (Oleadas A/B/C).
 
 ---
 
