@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_ITEMS } from "@/components/nav/nav-items";
-import { UserMenu } from "@/components/nav/user-menu";
 import { PendingGlow } from "@/components/nav/pending-glow";
 import { usePendientes } from "@/components/providers/pendientes-provider";
 import { useUiPrefs } from "@/components/providers/ui-prefs-provider";
@@ -90,7 +89,6 @@ export function ClassicNav() {
         <div className="glass-thin rounded-2xl px-3 py-2.5">
           <p className="text-sm font-medium">MONE</p>
         </div>
-        <UserMenu />
       </div>
     </aside>
   );
@@ -136,9 +134,6 @@ export function RailNav() {
           );
         })}
       </nav>
-      <div className="mt-auto px-1 pt-2">
-        <UserMenu />
-      </div>
     </aside>
   );
 }
@@ -197,9 +192,6 @@ export function CarouselNav({ orientation }: { orientation: "h" | "v" }) {
             );
           })}
         </nav>
-        <div className="mt-auto pb-1">
-          <UserMenu />
-        </div>
       </aside>
     );
   }
@@ -245,7 +237,6 @@ export function CarouselNav({ orientation }: { orientation: "h" | "v" }) {
             );
           })}
         </motion.nav>
-        <UserMenu />
       </div>
     </div>
   );

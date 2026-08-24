@@ -73,7 +73,7 @@ export function Sidebar() {
         <div className="glass-thin rounded-2xl px-3 py-2.5">
           <p className="text-sm font-medium">MONE</p>
         </div>
-        <UserMenu />
+        <UserMenu variant="full" align="start" />
       </div>
     </aside>
   );
