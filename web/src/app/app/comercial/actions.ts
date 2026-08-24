@@ -720,6 +720,32 @@ export async function enviarADirectorAction(formData: FormData) {
 export async function marcarEnviadaAction(formData: FormData) {
   const expedienteId = String(formData.get("expedienteId") || "");
   if (!expedienteId) throw new Error("Expediente requerido");
+
+  const db = getDb();
+  const [row] = await db
+    .select({
+      clienteId: s.solicitudes.clienteId,
+      clienteNombre: s.clientes.razonSocial,
+      contactoEmail: s.clientes.contactoEmail,
+      contactoTel: s.clientes.contactoTel,
+    })
+    .from(s.expedientes)
+    .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
+    .leftJoin(s.clientes, eq(s.solicitudes.clienteId, s.clientes.id))
+    .where(eq(s.expedientes.id, expedienteId))
+    .limit(1);
+
+  if (!row?.clienteId || !row.clienteNombre?.trim()) {
+    throw new Error(
+      "Asigna un cliente al expediente (Edición) antes de marcar enviada",
+    );
+  }
+  if (!row.contactoEmail?.trim() && !row.contactoTel?.trim()) {
+    throw new Error(
+      "El cliente necesita al menos email o teléfono de contacto antes de enviar",
+    );
+  }
+
   await transitionExpedienteAction(
     expedienteId,
     "ENVIADA",
@@ -1114,6 +1140,195 @@ export async function importCotizacionExcelAction(formData: FormData) {
     return {
       ok: false as const,
       error: e instanceof Error ? e.message : "Error al importar cotización",
+    };
+  }
+}
+
+const ALLOWED_DOC_TIPOS = new Set([
+  "BASE_LICITACION",
+  "LISTA_LIMPIA",
+  "COTIZACION_PROVEEDOR",
+  "COTIZACION_FINAL",
+  "PROPUESTA_ECONOMICA",
+  "PROPUESTA_TECNICA",
+  "CONSTANCIA_EMPRESA",
+  "FALLO",
+  "CONTRATO",
+  "OC",
+  "REMISION",
+  "FACTURA",
+  "OTRO",
+]);
+
+/** Upload unificado → documentos + sync Drive (best-effort) */
+export async function uploadDocumentoExpedienteAction(formData: FormData) {
+  try {
+    const user = await requireUser();
+    const expedienteId = String(formData.get("expedienteId") || "");
+    const tipoRaw = String(formData.get("tipo") || "OTRO");
+    const tipo = ALLOWED_DOC_TIPOS.has(tipoRaw) ? tipoRaw : "OTRO";
+    const file = formData.get("file");
+    if (!expedienteId || !(file instanceof File) || file.size === 0) {
+      return { ok: false as const, error: "Archivo o expediente faltante" };
+    }
+
+    const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+    await ensureDriveSchema();
+
+    const { storeFile } = await import("@/lib/storage");
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const stored = await storeFile(file, {
+      folder: `expedientes/${expedienteId}`,
+      filename: file.name,
+      contentType: file.type || undefined,
+    });
+
+    const db = getDb();
+    const userId =
+      user.id === "demo-miguel"
+        ? (
+            await db
+              .select({ id: s.users.id })
+              .from(s.users)
+              .where(eq(s.users.email, "miguel@ylika.local"))
+              .limit(1)
+          )[0]?.id
+        : user.id;
+
+    const [exp] = await db
+      .select({ empresaId: s.expedientes.empresaId })
+      .from(s.expedientes)
+      .where(eq(s.expedientes.id, expedienteId))
+      .limit(1);
+
+    const [docRow] = await db
+      .insert(s.documentos)
+      .values({
+        expedienteId,
+        empresaId: exp?.empresaId ?? null,
+        tipo: tipo as
+          | "BASE_LICITACION"
+          | "LISTA_LIMPIA"
+          | "COTIZACION_PROVEEDOR"
+          | "COTIZACION_FINAL"
+          | "PROPUESTA_ECONOMICA"
+          | "PROPUESTA_TECNICA"
+          | "CONSTANCIA_EMPRESA"
+          | "FALLO"
+          | "CONTRATO"
+          | "OC"
+          | "REMISION"
+          | "FACTURA"
+          | "OTRO",
+        nombre: file.name,
+        storagePath: stored.path,
+        mimeType: file.type || null,
+        uploadedBy: userId ?? null,
+      })
+      .returning({ id: s.documentos.id });
+
+    let driveSynced = false;
+    let driveReason: string | undefined;
+    if (docRow) {
+      try {
+        const { syncDocumentoToDrive } = await import(
+          "@/lib/storage/sync-documento-drive"
+        );
+        const sync = await syncDocumentoToDrive({
+          documentoId: docRow.id,
+          expedienteId,
+          tipo,
+          nombre: file.name,
+          bytes: buffer,
+          mimeType: file.type || null,
+        });
+        driveSynced = sync.synced === true;
+        if (!sync.synced) driveReason = sync.reason;
+      } catch {
+        driveReason = "sync_error";
+      }
+    }
+
+    await logBitacora(
+      expedienteId,
+      userId,
+      `Documento subido: ${file.name} (${tipo})`,
+      undefined,
+      undefined,
+      { tipo, path: stored.path, driveSynced },
+    );
+
+    revalidatePath(`/app/comercial/${expedienteId}`);
+    revalidatePath("/app/documentos");
+    return {
+      ok: true as const,
+      driveSynced,
+      driveReason,
+    };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "No se pudo subir",
+    };
+  }
+}
+
+function parseOptionalDate(raw: string): Date | null {
+  const v = raw.trim();
+  if (!v) return null;
+  const d = new Date(`${v}T12:00:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+export async function updateExpedientePlazosAction(formData: FormData) {
+  try {
+    const user = await requireUser();
+    const expedienteId = String(formData.get("expedienteId") || "");
+    if (!expedienteId) {
+      return { ok: false as const, error: "Expediente requerido" };
+    }
+
+    const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+    await ensureDriveSchema();
+
+    const db = getDb();
+    await db
+      .update(s.expedientes)
+      .set({
+        fechaJuntaAclaraciones: parseOptionalDate(
+          String(formData.get("fechaJuntaAclaraciones") || ""),
+        ),
+        fechaApertura: parseOptionalDate(
+          String(formData.get("fechaApertura") || ""),
+        ),
+        fechaFallo: parseOptionalDate(String(formData.get("fechaFallo") || "")),
+        vigenciaOfertaHasta: parseOptionalDate(
+          String(formData.get("vigenciaOfertaHasta") || ""),
+        ),
+        updatedAt: new Date(),
+      })
+      .where(eq(s.expedientes.id, expedienteId));
+
+    const userId =
+      user.id === "demo-miguel"
+        ? (
+            await db
+              .select({ id: s.users.id })
+              .from(s.users)
+              .where(eq(s.users.email, "miguel@ylika.local"))
+              .limit(1)
+          )[0]?.id
+        : user.id;
+
+    await logBitacora(expedienteId, userId, "Plazos del expediente actualizados");
+
+    revalidatePath(`/app/comercial/${expedienteId}`);
+    revalidatePath("/app");
+    return { ok: true as const };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "No se pudieron guardar plazos",
     };
   }
 }

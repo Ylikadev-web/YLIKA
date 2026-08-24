@@ -293,6 +293,11 @@ export const expedientes = pgTable("expedientes", {
   /** Google Drive folder id for this expediente root */
   driveFolderId: text("drive_folder_id"),
   driveWebViewLink: text("drive_web_view_link"),
+  /** Plazos operativos (tiempo y forma) */
+  fechaJuntaAclaraciones: timestamp("fecha_junta_aclaraciones", { mode: "date" }),
+  fechaApertura: timestamp("fecha_apertura", { mode: "date" }),
+  fechaFallo: timestamp("fecha_fallo", { mode: "date" }),
+  vigenciaOfertaHasta: timestamp("vigencia_oferta_hasta", { mode: "date" }),
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { mode: "date" }).notNull().defaultNow(),
 });

@@ -13,5 +13,9 @@ export async function ensureDriveSchema() {
   await sql`ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS drive_web_view_link text`;
   await sql`ALTER TABLE documentos ADD COLUMN IF NOT EXISTS drive_file_id text`;
   await sql`ALTER TABLE documentos ADD COLUMN IF NOT EXISTS drive_web_view_link text`;
+  await sql`ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS fecha_junta_aclaraciones timestamptz`;
+  await sql`ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS fecha_apertura timestamptz`;
+  await sql`ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS fecha_fallo timestamptz`;
+  await sql`ALTER TABLE expedientes ADD COLUMN IF NOT EXISTS vigencia_oferta_hasta timestamptz`;
   done = true;
 }

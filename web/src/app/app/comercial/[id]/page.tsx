@@ -10,13 +10,20 @@ import { EditPanel } from "@/components/comercial/edit-panel";
 import { RelacionesPanel } from "@/components/comercial/relaciones-panel";
 import { ChecklistPanel } from "@/components/comercial/checklist-panel";
 import { BasesPanel } from "@/components/comercial/bases-panel";
+import { ArchivoPanel } from "@/components/comercial/archivo-panel";
+import { PlazosPanel } from "@/components/comercial/plazos-panel";
 import { DeleteSolicitudButton } from "@/components/comercial/delete-solicitud-button";
 import { ProcessTree } from "@/components/comercial/process-tree";
 import { WorkflowPanel } from "@/components/comercial/workflow-panel";
 import { ExpedienteExplorer } from "@/components/comercial/expediente-explorer";
 import { defaultTabForEstatus } from "@/lib/domain/expediente-utils";
+import { checklistForExpediente } from "@/lib/domain/doc-checklist";
 import { listCambiosPendientesExpediente } from "@/app/app/comercial/edit-actions";
-import { getExpedienteById } from "@/lib/db/queries";
+import {
+  getExpedienteById,
+  listDocumentosForExpediente,
+} from "@/lib/db/queries";
+import { ensureDriveSchema } from "@/lib/db/ensure-drive-schema";
 import { ensureRequisitosBases } from "@/lib/db/requisitos";
 import { listTareasExpediente } from "@/lib/db/tareas";
 import {
@@ -35,16 +42,26 @@ export default async function ExpedientePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [exp, session, cambios, relaciones, proveedores, marcas, tareas] =
-    await Promise.all([
-      getExpedienteById(id),
-      auth(),
-      listCambiosPendientesExpediente(id),
-      listPartidaRelaciones(id),
-      listProveedores(),
-      listMarcas(),
-      listTareasExpediente(id),
-    ]);
+  await ensureDriveSchema();
+  const [
+    exp,
+    session,
+    cambios,
+    relaciones,
+    proveedores,
+    marcas,
+    tareas,
+    documentos,
+  ] = await Promise.all([
+    getExpedienteById(id),
+    auth(),
+    listCambiosPendientesExpediente(id),
+    listPartidaRelaciones(id),
+    listProveedores(),
+    listMarcas(),
+    listTareasExpediente(id),
+    listDocumentosForExpediente(id),
+  ]);
   if (!exp) notFound();
 
   const requisitos = await ensureRequisitosBases(id);
@@ -65,6 +82,17 @@ export default async function ExpedientePage({
     relaciones.filter((r) => r.proveedorId).map((r) => r.partidaId),
   ).size;
 
+  const docCheck = checklistForExpediente({
+    estatus: exp.estatus,
+    sector: exp.sector,
+    presentTipos: documentos.map((d) => d.tipo),
+  });
+  const hasClienteMinimo = Boolean(
+    exp.clienteId &&
+      exp.clienteNombre?.trim() &&
+      (exp.clienteEmail?.trim() || exp.clienteTel?.trim()),
+  );
+
   return (
     <AppShell
       density="compact"
@@ -72,6 +100,13 @@ export default async function ExpedientePage({
       subtitle={`${ESTATUS_LABEL[exp.estatus as EstatusExpediente] ?? exp.estatus} · ${exp.titulo}`}
       actions={
         <div className="flex flex-wrap items-center gap-1.5">
+          {exp.driveWebViewLink ? (
+            <a href={exp.driveWebViewLink} target="_blank" rel="noreferrer">
+              <Button variant="glass" size="sm">
+                Drive
+              </Button>
+            </a>
+          ) : null}
           <Link href="/app/comercial">
             <Button variant="ghost" size="sm">
               Pipeline
@@ -91,207 +126,235 @@ export default async function ExpedientePage({
       />
 
       <ExpedienteExplorer
-          defaultTab={defaultTabForEstatus(exp.estatus)}
-          tabs={[
-            { id: "resumen", label: "Resumen", short: "Res" },
-            {
-              id: "bases",
-              label: "Bases",
-              short: "Bas",
-              badge: basesPend || null,
-            },
-            {
-              id: "checklist",
-              label: "Checklist",
-              short: "Chk",
-              badge: tareasPend || null,
-              hidden:
-                tareas.length === 0 &&
-                ![
-                  "GANADA",
-                  "RECOTIZACION",
-                  "COMPRA",
-                  "ENTREGA",
-                  "COBRANZA",
-                ].includes(exp.estatus),
-            },
-            {
-              id: "edicion",
-              label: "Edición",
-              short: "Edit",
-              badge: cambios.length || null,
-            },
-            { id: "importar", label: "Importar", short: "XLS" },
-            {
-              id: "relaciones",
-              label: "Relaciones",
-              short: "Rel",
-              badge:
-                exp.partidas.length > 0
-                  ? `${relAsignadas}/${exp.partidas.length}`
-                  : null,
-            },
-            {
-              id: "comparativo",
-              label: "Comparativo",
-              short: "Cmp",
-              badge: exp.cotizaciones.length || null,
-            },
-            {
-              id: "historial",
-              label: "Historial",
-              short: "Hist",
-              badge: exp.bitacora.length || null,
-            },
-          ]}
-          panels={{
-            resumen: (
-              <div className="space-y-3">
-                <Glass className="px-3 py-2.5">
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                    <span>
-                      <span className="text-[var(--text-muted)]">Empresa · </span>
-                      {exp.empresaCodigo}
-                    </span>
-                    <span>
-                      <span className="text-[var(--text-muted)]">Sector · </span>
-                      {exp.sector}
-                    </span>
-                    <span>
-                      <span className="text-[var(--text-muted)]">Tipo · </span>
-                      {exp.tipoNombre}
-                    </span>
-                    <span>
-                      <span className="text-[var(--text-muted)]">Cliente · </span>
-                      {exp.clienteNombre ?? "—"}
-                    </span>
-                  </div>
-                </Glass>
-                <WorkflowPanel expedienteId={exp.id} estatus={exp.estatus} />
-              </div>
-            ),
-            bases: (
-              <BasesPanel expedienteId={exp.id} requisitos={requisitos} />
-            ),
-            checklist: (
-              <ChecklistPanel
+        defaultTab={defaultTabForEstatus(exp.estatus)}
+        tabs={[
+          { id: "resumen", label: "Resumen", short: "Res" },
+          {
+            id: "archivo",
+            label: "Archivo",
+            short: "Arch",
+            badge: `${docCheck.done}/${docCheck.required}`,
+          },
+          {
+            id: "bases",
+            label: "Bases",
+            short: "Bas",
+            badge: basesPend || null,
+          },
+          {
+            id: "checklist",
+            label: "Checklist",
+            short: "Chk",
+            badge: tareasPend || null,
+            hidden:
+              tareas.length === 0 &&
+              ![
+                "GANADA",
+                "RECOTIZACION",
+                "COMPRA",
+                "ENTREGA",
+                "COBRANZA",
+              ].includes(exp.estatus),
+          },
+          {
+            id: "edicion",
+            label: "Edición",
+            short: "Edit",
+            badge: cambios.length || null,
+          },
+          { id: "importar", label: "Importar", short: "XLS" },
+          {
+            id: "relaciones",
+            label: "Relaciones",
+            short: "Rel",
+            badge:
+              exp.partidas.length > 0
+                ? `${relAsignadas}/${exp.partidas.length}`
+                : null,
+          },
+          {
+            id: "comparativo",
+            label: "Comparativo",
+            short: "Cmp",
+            badge: exp.cotizaciones.length || null,
+          },
+          {
+            id: "historial",
+            label: "Historial",
+            short: "Hist",
+            badge: exp.bitacora.length || null,
+          },
+        ]}
+        panels={{
+          resumen: (
+            <div className="space-y-3">
+              <Glass className="px-3 py-2.5">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                  <span>
+                    <span className="text-[var(--text-muted)]">Empresa · </span>
+                    {exp.empresaCodigo}
+                  </span>
+                  <span>
+                    <span className="text-[var(--text-muted)]">Sector · </span>
+                    {exp.sector}
+                  </span>
+                  <span>
+                    <span className="text-[var(--text-muted)]">Tipo · </span>
+                    {exp.tipoNombre}
+                  </span>
+                  <span>
+                    <span className="text-[var(--text-muted)]">Cliente · </span>
+                    {exp.clienteNombre ?? "—"}
+                    {!hasClienteMinimo ? (
+                      <span className="text-[var(--danger)]"> · incompleto</span>
+                    ) : null}
+                  </span>
+                  <span>
+                    <span className="text-[var(--text-muted)]">Docs · </span>
+                    {docCheck.pct}%
+                  </span>
+                </div>
+              </Glass>
+              <PlazosPanel
                 expedienteId={exp.id}
-                tareas={tareas}
+                fechaJuntaAclaraciones={exp.fechaJuntaAclaraciones}
+                fechaApertura={exp.fechaApertura}
+                fechaFallo={exp.fechaFallo}
+                vigenciaOfertaHasta={exp.vigenciaOfertaHasta}
+              />
+              <WorkflowPanel
+                expedienteId={exp.id}
                 estatus={exp.estatus}
+                hasClienteMinimo={hasClienteMinimo}
               />
-            ),
-            edicion: (
-              <EditPanel
-                expedienteId={exp.id}
-                titulo={exp.titulo}
-                clienteNombre={exp.clienteNombre}
-                partidas={exp.partidas}
-                cambiosPendientes={cambios}
-                canApprove={canApprove}
-              />
-            ),
-            importar: (
-              <ExcelImportPanel
-                expedienteId={exp.id}
-                nextAlias={nextAlias}
-                proveedores={proveedores}
-              />
-            ),
-            relaciones: (
-              <RelacionesPanel
-                expedienteId={exp.id}
-                partidas={exp.partidas}
-                relaciones={relaciones}
-                proveedores={proveedores}
-                marcas={marcas}
-              />
-            ),
-            comparativo: (
-              <ComparativoClient
-                expedienteId={exp.id}
-                partidas={exp.partidas}
-                cotizaciones={exp.cotizaciones}
-                lineas={exp.lineas}
-                markupInicial={Number(exp.markupPct ?? 12)}
-                criterioInicial={
-                  (exp.criterioSeleccion as SelectionMode) || "PRECIO"
-                }
-                estatus={exp.estatus}
-              />
-            ),
-            historial: (
-              <div className="grid gap-3 lg:grid-cols-2">
-                <Glass className="p-5">
-                  <h3 className="display font-semibold">Bitácora</h3>
-                  <ul className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto text-sm">
-                    {exp.bitacora.length === 0 ? (
-                      <li className="text-[var(--text-muted)]">
-                        Sin movimientos
+            </div>
+          ),
+          archivo: (
+            <ArchivoPanel
+              expedienteId={exp.id}
+              estatus={exp.estatus}
+              sector={exp.sector}
+              documentos={documentos}
+              driveFolderId={exp.driveFolderId}
+              driveWebViewLink={exp.driveWebViewLink}
+            />
+          ),
+          bases: <BasesPanel expedienteId={exp.id} requisitos={requisitos} />,
+          checklist: (
+            <ChecklistPanel
+              expedienteId={exp.id}
+              tareas={tareas}
+              estatus={exp.estatus}
+            />
+          ),
+          edicion: (
+            <EditPanel
+              expedienteId={exp.id}
+              titulo={exp.titulo}
+              clienteNombre={exp.clienteNombre}
+              partidas={exp.partidas}
+              cambiosPendientes={cambios}
+              canApprove={canApprove}
+            />
+          ),
+          importar: (
+            <ExcelImportPanel
+              expedienteId={exp.id}
+              nextAlias={nextAlias}
+              proveedores={proveedores}
+            />
+          ),
+          relaciones: (
+            <RelacionesPanel
+              expedienteId={exp.id}
+              partidas={exp.partidas}
+              relaciones={relaciones}
+              proveedores={proveedores}
+              marcas={marcas}
+            />
+          ),
+          comparativo: (
+            <ComparativoClient
+              expedienteId={exp.id}
+              partidas={exp.partidas}
+              cotizaciones={exp.cotizaciones}
+              lineas={exp.lineas}
+              markupInicial={Number(exp.markupPct ?? 12)}
+              criterioInicial={
+                (exp.criterioSeleccion as SelectionMode) || "PRECIO"
+              }
+              estatus={exp.estatus}
+            />
+          ),
+          historial: (
+            <div className="grid gap-3 lg:grid-cols-2">
+              <Glass className="p-5">
+                <h3 className="display font-semibold">Bitácora</h3>
+                <ul className="mt-3 max-h-[60vh] space-y-2 overflow-y-auto text-sm">
+                  {exp.bitacora.length === 0 ? (
+                    <li className="text-[var(--text-muted)]">Sin movimientos</li>
+                  ) : (
+                    exp.bitacora.map((b) => (
+                      <li
+                        key={b.id}
+                        className="glass-thin rounded-2xl px-3 py-2"
+                      >
+                        <p className="font-medium">{b.accion}</p>
+                        <p className="text-[11px] text-[var(--text-muted)]">
+                          {b.usuarioNombre ?? "sistema"} ·{" "}
+                          {b.createdAt
+                            ? new Date(b.createdAt).toLocaleString("es-MX")
+                            : ""}
+                          {b.deEstatus || b.aEstatus
+                            ? ` · ${b.deEstatus ?? "—"} → ${b.aEstatus ?? "—"}`
+                            : ""}
+                        </p>
                       </li>
-                    ) : (
-                      exp.bitacora.map((b) => (
-                        <li
-                          key={b.id}
-                          className="glass-thin rounded-2xl px-3 py-2"
-                        >
-                          <p className="font-medium">{b.accion}</p>
-                          <p className="text-[11px] text-[var(--text-muted)]">
-                            {b.usuarioNombre ?? "sistema"} ·{" "}
-                            {b.createdAt
-                              ? new Date(b.createdAt).toLocaleString("es-MX")
-                              : ""}
-                            {b.deEstatus || b.aEstatus
-                              ? ` · ${b.deEstatus ?? "—"} → ${b.aEstatus ?? "—"}`
-                              : ""}
+                    ))
+                  )}
+                </ul>
+              </Glass>
+              <Glass className="p-5">
+                <h3 className="display font-semibold">Cotizaciones finales</h3>
+                <ul className="mt-3 space-y-2 text-sm">
+                  {exp.finales.length === 0 ? (
+                    <li className="text-[var(--text-muted)]">
+                      Aún no se ha generado ninguna versión.
+                    </li>
+                  ) : (
+                    exp.finales.map((f) => (
+                      <li
+                        key={f.id}
+                        className="glass-thin flex flex-wrap items-center justify-between gap-2 rounded-2xl px-3 py-2"
+                      >
+                        <div>
+                          <p>
+                            v{f.version} ·{" "}
+                            <span className="text-[var(--text-muted)]">
+                              markup interno {f.markupPctAplicado}%
+                            </span>{" "}
+                            · {f.criterio}
                           </p>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                </Glass>
-                <Glass className="p-5">
-                  <h3 className="display font-semibold">
-                    Cotizaciones finales
-                  </h3>
-                  <ul className="mt-3 space-y-2 text-sm">
-                    {exp.finales.length === 0 ? (
-                      <li className="text-[var(--text-muted)]">
-                        Aún no se ha generado ninguna versión.
-                      </li>
-                    ) : (
-                      exp.finales.map((f) => (
-                        <li
-                          key={f.id}
-                          className="glass-thin flex flex-wrap items-center justify-between gap-2 rounded-2xl px-3 py-2"
+                          <span className="mt-0.5 block text-[11px] text-[var(--text-muted)]">
+                            {f.createdAt
+                              ? new Date(f.createdAt).toLocaleString("es-MX")
+                              : ""}
+                          </span>
+                        </div>
+                        <Link
+                          href={`/app/comercial/${exp.id}/cotizacion/${f.version}`}
+                          className="text-xs font-medium text-[var(--accent)]"
                         >
-                          <div>
-                            <p>
-                              v{f.version} ·{" "}
-                              <span className="text-[var(--text-muted)]">
-                                markup interno {f.markupPctAplicado}%
-                              </span>{" "}
-                              · {f.criterio}
-                            </p>
-                            <span className="mt-0.5 block text-[11px] text-[var(--text-muted)]">
-                              {f.createdAt
-                                ? new Date(f.createdAt).toLocaleString("es-MX")
-                                : ""}
-                            </span>
-                          </div>
-                          <Link
-                            href={`/app/comercial/${exp.id}/cotizacion/${f.version}`}
-                            className="text-xs font-medium text-[var(--accent)]"
-                          >
-                            PDF cliente →
-                          </Link>
-                        </li>
-                      ))
-                    )}
-                  </ul>
-                </Glass>
-              </div>
-            ),
-          }}
+                          PDF cliente →
+                        </Link>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              </Glass>
+            </div>
+          ),
+        }}
       />
     </AppShell>
   );

@@ -68,6 +68,12 @@ export async function getExpedienteById(id: string) {
       aptoNotas: s.expedientes.aptoNotas,
       markupPct: s.expedientes.markupPct,
       criterioSeleccion: s.expedientes.criterioSeleccion,
+      driveFolderId: s.expedientes.driveFolderId,
+      driveWebViewLink: s.expedientes.driveWebViewLink,
+      fechaJuntaAclaraciones: s.expedientes.fechaJuntaAclaraciones,
+      fechaApertura: s.expedientes.fechaApertura,
+      fechaFallo: s.expedientes.fechaFallo,
+      vigenciaOfertaHasta: s.expedientes.vigenciaOfertaHasta,
       solicitudId: s.expedientes.solicitudId,
       empresaId: s.expedientes.empresaId,
       titulo: s.solicitudes.titulo,
@@ -172,6 +178,24 @@ export async function getExpedienteById(id: string) {
     requisitos,
     finales,
   };
+}
+
+export async function listDocumentosForExpediente(expedienteId: string) {
+  const db = getDb();
+  return db
+    .select({
+      id: s.documentos.id,
+      tipo: s.documentos.tipo,
+      nombre: s.documentos.nombre,
+      mimeType: s.documentos.mimeType,
+      storagePath: s.documentos.storagePath,
+      driveFileId: s.documentos.driveFileId,
+      driveWebViewLink: s.documentos.driveWebViewLink,
+      createdAt: s.documentos.createdAt,
+    })
+    .from(s.documentos)
+    .where(eq(s.documentos.expedienteId, expedienteId))
+    .orderBy(desc(s.documentos.createdAt));
 }
 
 export async function listDocumentosEmpresa(empresaId?: string) {

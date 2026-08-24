@@ -1,5 +1,6 @@
 export const EXPEDIENTE_TAB_IDS = [
   "resumen",
+  "archivo",
   "bases",
   "checklist",
   "edicion",
@@ -33,7 +34,7 @@ export function defaultTabForEstatus(estatus: string): ExpedienteTabId {
     case "PROPUESTA_ADMIN":
     case "REVISION_DIRECTOR":
     case "ENVIADA":
-      return "resumen";
+      return "archivo";
     case "COBRANZA":
       return "checklist";
     default:

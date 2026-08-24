@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
@@ -17,12 +17,16 @@ import type { EstatusExpediente } from "@/lib/domain/workflow";
 export function WorkflowPanel({
   expedienteId,
   estatus,
+  hasClienteMinimo,
 }: {
   expedienteId: string;
   estatus: string;
+  /** Cliente + (email o tel) — requerido para marcar ENVIADA */
+  hasClienteMinimo?: boolean;
 }) {
   const router = useRouter();
   const [pending, start] = useTransition();
+  const [error, setError] = useState<string | null>(null);
 
   if (
     ![
@@ -62,6 +66,7 @@ export function WorkflowPanel({
               disabled={pending}
               onClick={() =>
                 start(async () => {
+                  setError(null);
                   const fd = new FormData();
                   fd.set("expedienteId", expedienteId);
                   await enviarADirectorAction(fd);
@@ -81,6 +86,9 @@ export function WorkflowPanel({
             <p className="text-sm font-semibold">Revisión Nesim</p>
             <p className="text-xs text-[var(--text-muted)]">
               Aprueba y envía la propuesta al cliente
+              {hasClienteMinimo === false
+                ? " · falta cliente/contacto (ve a Edición)"
+                : ""}
             </p>
           </div>
           <Button
@@ -89,10 +97,17 @@ export function WorkflowPanel({
             disabled={pending}
             onClick={() =>
               start(async () => {
-                const fd = new FormData();
-                fd.set("expedienteId", expedienteId);
-                await marcarEnviadaAction(fd);
-                router.refresh();
+                setError(null);
+                try {
+                  const fd = new FormData();
+                  fd.set("expedienteId", expedienteId);
+                  await marcarEnviadaAction(fd);
+                  router.refresh();
+                } catch (e) {
+                  setError(
+                    e instanceof Error ? e.message : "No se pudo enviar",
+                  );
+                }
               })
             }
           >
@@ -106,7 +121,7 @@ export function WorkflowPanel({
           <div>
             <p className="text-sm font-semibold">Esperando fallo</p>
             <p className="text-xs text-[var(--text-muted)]">
-              Registra el resultado del proceso
+              Registra el resultado · sube el fallo en Archivo
             </p>
           </div>
           <div className="flex gap-2">
@@ -116,6 +131,7 @@ export function WorkflowPanel({
               disabled={pending}
               onClick={() =>
                 start(async () => {
+                  setError(null);
                   const fd = new FormData();
                   fd.set("expedienteId", expedienteId);
                   await marcarGanadaAction(fd);
@@ -131,6 +147,7 @@ export function WorkflowPanel({
               disabled={pending}
               onClick={() =>
                 start(async () => {
+                  setError(null);
                   const fd = new FormData();
                   fd.set("expedienteId", expedienteId);
                   await marcarPerdidaAction(fd);
@@ -158,6 +175,7 @@ export function WorkflowPanel({
             disabled={pending}
             onClick={() =>
               start(async () => {
+                setError(null);
                 await transitionExpedienteAction(
                   expedienteId,
                   "PROPUESTA_ADMIN" as EstatusExpediente,
@@ -172,6 +190,10 @@ export function WorkflowPanel({
           </Button>
         </div>
       )}
+
+      {error ? (
+        <p className="mt-3 text-sm text-[var(--danger)]">{error}</p>
+      ) : null}
     </Glass>
   );
 }

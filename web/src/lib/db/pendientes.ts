@@ -453,5 +453,59 @@ export async function listPendientesForRoles(
     }
   }
 
+  // ── Plazos de expediente (junta / apertura / fallo / vigencia) ─────
+  try {
+    const horizon = endOfDay(new Date(Date.now() + 14 * 86400_000));
+    const plazos = await db
+      .select({
+        id: s.expedientes.id,
+        codigo: s.expedientes.codigo,
+        titulo: s.solicitudes.titulo,
+        fechaJuntaAclaraciones: s.expedientes.fechaJuntaAclaraciones,
+        fechaApertura: s.expedientes.fechaApertura,
+        fechaFallo: s.expedientes.fechaFallo,
+        vigenciaOfertaHasta: s.expedientes.vigenciaOfertaHasta,
+        estatus: s.expedientes.estatus,
+      })
+      .from(s.expedientes)
+      .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
+      .where(
+        and(
+          ne(s.expedientes.estatus, "CERRADO"),
+          ne(s.expedientes.estatus, "CANCELADO"),
+          ne(s.expedientes.estatus, "PERDIDA"),
+        ),
+      )
+      .limit(80);
+
+    for (const p of plazos) {
+      const candidates: { label: string; when: Date | null }[] = [
+        { label: "Junta aclaraciones", when: p.fechaJuntaAclaraciones },
+        { label: "Apertura", when: p.fechaApertura },
+        { label: "Fallo", when: p.fechaFallo },
+        { label: "Vigencia oferta", when: p.vigenciaOfertaHasta },
+      ];
+      for (const c of candidates) {
+        if (!c.when) continue;
+        const when = new Date(c.when);
+        if (when > horizon) continue;
+        const overdue = when < today0;
+        items.push({
+          id: `plazo-${p.id}-${c.label}`,
+          title: `${overdue ? "Venció" : "Próximo"}: ${c.label} · ${p.codigo}`,
+          href: `/app/comercial/${p.id}?tab=resumen`,
+          owner: "Plazos",
+          tone: overdue ? "rose" : "amber",
+          tip: {
+            que: p.titulo,
+            cuando: when.toLocaleDateString("es-MX"),
+          },
+        });
+      }
+    }
+  } catch {
+    /* columnas de plazos pueden no existir aún en DB fría */
+  }
+
   return items;
 }
