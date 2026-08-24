@@ -1,7 +1,8 @@
 # YLIKA Ops — Progress
 
 > Flujo: **Laura → Ventas → Itza → Nesim → (si gana) recotización → compra → remisión → cobranza**.  
-> Propuesta: [`PROPUESTA-IMPLEMENTACION.md`](./PROPUESTA-IMPLEMENTACION.md) · Oleada A en curso.
+> Propuesta: [`PROPUESTA-IMPLEMENTACION.md`](./PROPUESTA-IMPLEMENTACION.md)  
+> **Prioridad acordada:** estructura del sistema primero · Drive diferido (después se enciende el espejo).
 
 ---
 
@@ -11,17 +12,17 @@
 ██████████████░░░░░░  68%
 ```
 
-Antes ~58%. Subió con Archivo + checklist docs + plazos + bloqueo ENVIADA + upload unificado.
+El % no baja por diferir Drive: la app ya guarda archivos en expediente. Drive solo añade espejo humano.
 
 | Criterio “listo para operación diaria” | Estado |
 |----------------------------------------|--------|
-| Workflow Laura→…→cobranza usable | ~85% |
-| Drive real + sync docs clave | ~65% (código listo; **falta creds Vercel**) |
-| Dashboards por área accionables | ~80% (+ alertas plazos) |
+| Workflow Laura→…→cobranza usable | ~85% → **siguiente foco Oleada B** |
+| Memoria completa por solicitud (en app) | ~75% (Archivo + checklist) |
+| Drive espejo | ⏸ Diferido (código stub listo) |
+| Dashboards por área accionables | ~80% |
 | Admin usuarios/áreas | ~90% |
-| Memoria completa por solicitud | ~70% (Archivo + checklist; falta uso real + Drive ON) |
 | Parsers PDF/Excel | ~70% |
-| Caja chica / COMPRAS / obra | Fase 2 |
+| Caja chica / COMPRAS / obra | Fase 2 / C |
 
 ---
 
@@ -36,38 +37,37 @@ Antes ~58%. Subió con Archivo + checklist docs + plazos + bloqueo ENVIADA + upl
 ```
 ██████████████████░░  92%
 ```
-✅ Wizard partidas-primero · ✅ cotización/comparativo · ⬜ afinar match Excel reales
 
-### Gate 2 — Workflow roles
+### Gate 2 — Workflow roles ← **prioridad estructura**
 ```
 █████████████████░░░  85%
 ```
-✅ Pipeline · ✅ bandeja · ✅ **bloqueo ENVIADA sin cliente/contacto** · ⬜ handoff UI más rico (Oleada B)
+✅ Pipeline · bandeja · bloqueo ENVIADA  
+⬜ Handoff explícito · bandeja endurecida · plantillas GOB/PRIV (Oleada B)
 
-### Gate 3 — Post-ganada
+### Gate 3 — Post-ganada ← **prioridad estructura**
 ```
 ███████████████░░░░░  75%
 ```
-Sin cambio esta oleada (OC formal / rol COMPRAS = B)
+✅ Recotización / remisión / cobranza draft  
+⬜ OC formal · estados cobranza reales (Oleada B)
 
 ### Gate 4 — Google Drive
 ```
-██████████████░░░░░░  72%
+████████████░░░░░░░░  60%  ⏸ en pausa
 ```
-✅ Carpetas al crear · ✅ sync lista limpia/cotiz · ✅ **upload unificado → Drive** · ✅ UI Abrir Drive  
-⬜ **Credenciales `GOOGLE_DRIVE_*` en Vercel (tú)** · ⬜ regenerar PDF cot.final → sync
+Código/UI listos; **no pedimos creds ahora**. Se retoma en C0.
 
 ### Gate 5 — Usuarios / áreas
 ```
 ██████████████████░░  90%
 ```
 
-### Gate 6 — Documentos & parsing
+### Gate 6 — Documentos (en app)
 ```
 ████████████████░░░░  82%
 ```
-✅ **Tab Archivo** · ✅ **checklist docs por etapa + %** · ✅ upload tipado  
-⬜ Parser PDF bases · ⬜ preview unificado
+✅ Archivo · checklist · upload tipado (sin depender de Drive)
 
 ### Gate 7 — Tesorería / Bolsa
 ```
@@ -86,25 +86,27 @@ Sin cambio esta oleada (OC formal / rol COMPRAS = B)
 
 ---
 
-## Oleada A — checklist de entregas
+## Oleadas
 
-| # | Entrega | Estado |
-|---|---------|--------|
-| A1 | Drive real (creds) | ⬜ **bloqueador tuyo** · UI/código listos |
-| A2 | Checklist docs por etapa | ✅ |
-| A3 | Upload unificado + sync Drive | ✅ |
-| A4 | Panel Archivo del expediente | ✅ tab `Archivo` |
-| A5 | Plazos (junta/apertura/fallo/vigencia) + alertas Inicio | ✅ |
-| A6 | Bloquear ENVIADA sin cliente mínimo | ✅ |
+| Oleada | Foco | Estado |
+|--------|------|--------|
+| A | Memoria en expediente (Archivo, plazos, cliente mín.) | ✅ cerrada (Drive ON diferido) |
+| **B** | **Estructura operativa (handoffs, OC, cobranza, alertas)** | **← siguiente** |
+| C | Empresa + **Drive ON (C0)** + caja chica / reportes | Después de usar B |
 
-**Oleada B (aún no):** handoffs, alertas constancias endurecidas, OC formal, estados cobranza, rol COMPRAS.  
-**Oleada C (aún no):** caja chica, historial cliente, reportes, parser PDF, obra.
+### Siguiente cola (B) — sin Drive
+
+1. B2 Handoff explícito entre roles  
+2. B3 Bandeja Inicio más accionable  
+3. B1 Alertas constancias / plazos endurecidas  
+4. B4 Plantillas checklist GOB vs PRIV  
+5. B5 OC formal post-ganada  
+6. B6 Estados de cobranza  
 
 ---
 
 ## Bloqueadores / lo que necesito de ti
 
-1. **Google Drive** en Vercel: `GOOGLE_DRIVE_CLIENT_EMAIL`, `GOOGLE_DRIVE_PRIVATE_KEY`, `GOOGLE_DRIVE_FOLDER_ID`.
-2. **1 base PDF** + Excel lista limpia + cotizaciones (afinar parsers).
-3. Confirmar checklist mínimo con Laura/Itza (15 min).
-4. ¿Rol `COMPRAS` en Oleada B?
+1. ~~Google Drive creds~~ — **no ahora** (decisión tuya).  
+2. Confirmar: ¿arranquemos Oleada B en ese orden?  
+3. ¿Rol `COMPRAS` en B o después?

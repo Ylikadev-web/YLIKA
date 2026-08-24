@@ -191,20 +191,21 @@ Hasta entonces, el % de expectativa final (~58% hoy) no debe leerse como “casi
 
 | Métrica | Objetivo práctico |
 |---------|-------------------|
-| % expedientes con carpeta Drive real | → 100% nuevos |
-| % expedientes con checklist ≥80% en su etapa | → ≥90% activos |
+| % expedientes con checklist docs ≥80% en su etapa | → ≥90% activos |
 | Tiempo mediano REVISION_REQUISITOS → ENVIADA | Bajar tras B1–B3 |
 | % ganadas sin huecos doc (bases+cotiz+propuesta+fallo) | → ≥95% |
 | Consultas “¿dónde está el archivo de…?” | Deberían caer a casi 0 |
+| % expedientes con carpeta Drive real | Diferido (C0) — no bloquea operación |
 
 ---
 
 ## 9. Pedidos concretos a ti (Miguel)
 
-1. **Pegar `GOOGLE_DRIVE_*` en Vercel** y compartir la carpeta raíz con la service account.  
-2. Subir **1 PDF de bases** + **1 lista limpia** + **1–2 cotizaciones** (anonimizados si hace falta).  
-3. Confirmar: ¿Oleada A tal cual? ¿Rol `COMPRAS` en B o después?  
-4. Validar con Laura/Itza el **checklist mínimo** de docs por etapa (15 min de reunión basta).
+1. ~~Credenciales Drive~~ — **diferidas** a propósito; no bloquean la siguiente oleada.  
+2. Confirmar arranque **Oleada B** (handoffs → bandeja → OC → cobranza).  
+3. ¿Rol `COMPRAS` en B o después?  
+4. Cuando quieras afinar parsers: 1 PDF bases + Excels (opcional, no bloqueante).  
+5. Validar con Laura/Itza el checklist mínimo de docs (15 min).
 
 ---
 
@@ -213,5 +214,5 @@ Hasta entonces, el % de expectativa final (~58% hoy) no debe leerse como “casi
 El sistema de tu jefe y el tuyo comparten el *qué*.  
 La propuesta correcta para el tuyo es **profundizar el expediente y el tiempo/forma**, no ensanchar el menú.
 
-**Prioridad auditada:** Oleada A (memoria completa) → Oleada B (control de plazos y handoffs) → Oleada C (empresa).  
-Si solo hubiera capacidad para una cosa esta semana: **Drive real + checklist de documentos + archivo del expediente**.
+**Prioridad actual (acordada):** estructura del sistema (Oleada B) **antes** de encender Drive.  
+Drive se enciende después (C0) y el espejo se actualiza sin rediseñar el pasillo.
