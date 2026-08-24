@@ -35,6 +35,19 @@ export async function ensureDriveSchema() {
   `;
 
   await sql`
+    CREATE TABLE IF NOT EXISTS orden_compra_partidas (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      orden_compra_id uuid NOT NULL REFERENCES ordenes_compra(id) ON DELETE CASCADE,
+      partida_id uuid REFERENCES partidas(id),
+      numero integer NOT NULL DEFAULT 1,
+      descripcion text NOT NULL,
+      cantidad numeric(18,4) NOT NULL DEFAULT 1,
+      unidad text NOT NULL DEFAULT 'PZA',
+      precio_unitario numeric(18,4)
+    )
+  `;
+
+  await sql`
     CREATE TABLE IF NOT EXISTS cobranzas (
       id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
       expediente_id uuid NOT NULL UNIQUE REFERENCES expedientes(id) ON DELETE CASCADE,

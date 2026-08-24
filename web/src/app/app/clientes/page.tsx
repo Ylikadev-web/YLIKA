@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/ui/glass";
@@ -10,12 +11,13 @@ export default async function ClientesPage() {
   const clientes = await listClientes();
 
   return (
-    <AppShell
-      title="Clientes"
-    >
+    <AppShell title="Clientes">
       <Glass className="mb-4 p-5">
         <h2 className="display text-lg font-semibold">Nuevo cliente</h2>
-        <form action={createClienteAction} className="mt-4 grid gap-3 md:grid-cols-2">
+        <form
+          action={createClienteAction}
+          className="mt-4 grid gap-3 md:grid-cols-2"
+        >
           <label className="text-sm md:col-span-2">
             Razón social
             <input
@@ -86,6 +88,7 @@ export default async function ClientesPage() {
               <th className="px-4 py-3">RFC</th>
               <th className="px-4 py-3">Contacto</th>
               <th className="px-4 py-3">Email</th>
+              <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
@@ -96,11 +99,22 @@ export default async function ClientesPage() {
                 <td className="px-4 py-3">{c.rfc ?? "—"}</td>
                 <td className="px-4 py-3">{c.contactoNombre ?? "—"}</td>
                 <td className="px-4 py-3">{c.contactoEmail ?? "—"}</td>
+                <td className="px-4 py-3 text-right">
+                  <Link
+                    href={`/app/clientes/${c.id}`}
+                    className="text-xs font-medium text-[var(--accent)]"
+                  >
+                    Historial →
+                  </Link>
+                </td>
               </tr>
             ))}
             {clientes.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-[var(--text-muted)]">
+                <td
+                  colSpan={6}
+                  className="px-4 py-8 text-center text-[var(--text-muted)]"
+                >
                   Sin clientes. Crea el primero arriba.
                 </td>
               </tr>

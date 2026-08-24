@@ -201,7 +201,7 @@ export async function listDocumentosForExpediente(expedienteId: string) {
 export async function listOrdenesCompraExpediente(expedienteId: string) {
   const db = getDb();
   try {
-    return await db
+    const ordenes = await db
       .select({
         id: s.ordenesCompra.id,
         folio: s.ordenesCompra.folio,
@@ -213,6 +213,37 @@ export async function listOrdenesCompraExpediente(expedienteId: string) {
       .from(s.ordenesCompra)
       .where(eq(s.ordenesCompra.expedienteId, expedienteId))
       .orderBy(desc(s.ordenesCompra.createdAt));
+
+    if (!ordenes.length) return [];
+
+    const ocIds = ordenes.map((o) => o.id);
+    let lineas: Array<{
+      ordenCompraId: string;
+      numero: number;
+      descripcion: string;
+      cantidad: string;
+      unidad: string;
+    }> = [];
+    try {
+      lineas = await db
+        .select({
+          ordenCompraId: s.ordenCompraPartidas.ordenCompraId,
+          numero: s.ordenCompraPartidas.numero,
+          descripcion: s.ordenCompraPartidas.descripcion,
+          cantidad: s.ordenCompraPartidas.cantidad,
+          unidad: s.ordenCompraPartidas.unidad,
+        })
+        .from(s.ordenCompraPartidas)
+        .where(inArray(s.ordenCompraPartidas.ordenCompraId, ocIds))
+        .orderBy(asc(s.ordenCompraPartidas.numero));
+    } catch {
+      lineas = [];
+    }
+
+    return ordenes.map((o) => ({
+      ...o,
+      lineas: lineas.filter((l) => l.ordenCompraId === o.id),
+    }));
   } catch {
     return [];
   }

@@ -780,6 +780,19 @@ export const ordenesCompra = pgTable("ordenes_compra", {
   createdAt: timestamp("created_at", { mode: "date" }).notNull().defaultNow(),
 });
 
+export const ordenCompraPartidas = pgTable("orden_compra_partidas", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  ordenCompraId: uuid("orden_compra_id")
+    .notNull()
+    .references(() => ordenesCompra.id, { onDelete: "cascade" }),
+  partidaId: uuid("partida_id").references(() => partidas.id),
+  numero: integer("numero").notNull().default(1),
+  descripcion: text("descripcion").notNull(),
+  cantidad: numeric("cantidad", { precision: 18, scale: 4 }).notNull().default("1"),
+  unidad: text("unidad").notNull().default("PZA"),
+  precioUnitario: numeric("precio_unitario", { precision: 18, scale: 4 }),
+});
+
 /** Cobranza por expediente (estados + montos) */
 export const cobranzas = pgTable("cobranzas", {
   id: uuid("id").defaultRandom().primaryKey(),

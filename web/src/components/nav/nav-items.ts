@@ -11,6 +11,7 @@ import {
   ShoppingCart,
   Truck,
   Users,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -28,6 +29,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/app/compras", label: "Compras", icon: ShoppingCart },
   { href: "/app/entregas", label: "Entregas", icon: Truck },
   { href: "/app/clientes", label: "Clientes", icon: Users },
+  { href: "/app/reportes", label: "Reportes", icon: BarChart3 },
   { href: "/app/tesoreria", label: "Bolsa", icon: Landmark },
   { href: "/app/proyectos", label: "Proyectos", icon: FolderKanban },
   { href: "/app/licitaciones", label: "Licitaciones", icon: Gavel },

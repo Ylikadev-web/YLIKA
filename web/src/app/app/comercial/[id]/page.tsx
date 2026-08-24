@@ -265,6 +265,13 @@ export default async function ExpedientePage({
                   id: p.id,
                   razonSocial: p.razonSocial,
                 }))}
+                partidas={exp.partidas.map((p) => ({
+                  id: p.id,
+                  numero: p.numero,
+                  descripcion: p.descripcion,
+                  cantidad: String(p.cantidad ?? "1"),
+                  unidad: p.unidad || "PZA",
+                }))}
                 ordenes={ordenes}
                 canEmit={[
                   "GANADA",

@@ -7,6 +7,126 @@ export async function listClientes() {
   return db.select().from(s.clientes).orderBy(asc(s.clientes.razonSocial));
 }
 
+export async function getClienteById(id: string) {
+  const db = getDb();
+  const [c] = await db
+    .select()
+    .from(s.clientes)
+    .where(eq(s.clientes.id, id))
+    .limit(1);
+  return c ?? null;
+}
+
+/** Historial de solicitudes/expedientes de un cliente */
+export async function listExpedientesByCliente(clienteId: string) {
+  const db = getDb();
+  return db
+    .select({
+      id: s.expedientes.id,
+      codigo: s.expedientes.codigo,
+      estatus: s.expedientes.estatus,
+      updatedAt: s.expedientes.updatedAt,
+      createdAt: s.expedientes.createdAt,
+      titulo: s.solicitudes.titulo,
+      sector: s.solicitudes.sector,
+      folioExterno: s.solicitudes.folioExterno,
+      empresaCodigo: s.empresas.codigo,
+      tipoNombre: s.tiposSolicitud.nombre,
+    })
+    .from(s.expedientes)
+    .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
+    .innerJoin(s.empresas, eq(s.expedientes.empresaId, s.empresas.id))
+    .innerJoin(
+      s.tiposSolicitud,
+      eq(s.solicitudes.tipoSolicitudId, s.tiposSolicitud.id),
+    )
+    .where(eq(s.solicitudes.clienteId, clienteId))
+    .orderBy(desc(s.expedientes.updatedAt));
+}
+
+/** Snapshot operativo semanal (estructura, sin Drive) */
+export async function listReporteOperativo() {
+  const db = getDb();
+  const since = new Date(Date.now() - 7 * 86400_000);
+
+  const todos = await db
+    .select({
+      id: s.expedientes.id,
+      codigo: s.expedientes.codigo,
+      estatus: s.expedientes.estatus,
+      updatedAt: s.expedientes.updatedAt,
+      createdAt: s.expedientes.createdAt,
+      titulo: s.solicitudes.titulo,
+      sector: s.solicitudes.sector,
+      empresaCodigo: s.empresas.codigo,
+      clienteNombre: s.clientes.razonSocial,
+    })
+    .from(s.expedientes)
+    .innerJoin(s.solicitudes, eq(s.expedientes.solicitudId, s.solicitudes.id))
+    .innerJoin(s.empresas, eq(s.expedientes.empresaId, s.empresas.id))
+    .leftJoin(s.clientes, eq(s.solicitudes.clienteId, s.clientes.id))
+    .orderBy(desc(s.expedientes.updatedAt))
+    .limit(200);
+
+  const porEstatus: Record<string, number> = {};
+  for (const e of todos) {
+    porEstatus[e.estatus] = (porEstatus[e.estatus] ?? 0) + 1;
+  }
+
+  const creadosSemana = todos.filter(
+    (e) => e.createdAt && new Date(e.createdAt) >= since,
+  ).length;
+  const movidosSemana = todos.filter(
+    (e) => e.updatedAt && new Date(e.updatedAt) >= since,
+  ).length;
+  const ganadas = todos.filter((e) =>
+    ["GANADA", "RECOTIZACION", "COMPRA", "ENTREGA", "COBRANZA", "CERRADO"].includes(
+      e.estatus,
+    ),
+  ).length;
+  const enviadas = todos.filter((e) => e.estatus === "ENVIADA").length;
+  const perdidas = todos.filter((e) => e.estatus === "PERDIDA").length;
+  const enProceso = todos.filter(
+    (e) =>
+      !["CERRADO", "CANCELADO", "PERDIDA"].includes(e.estatus),
+  ).length;
+
+  let cobranzaAbierta = 0;
+  let ocEmitidas = 0;
+  try {
+    const cob = await db.select({ id: s.cobranzas.id }).from(s.cobranzas).where(
+      ne(s.cobranzas.estatus, "COBRADA"),
+    );
+    cobranzaAbierta = cob.length;
+  } catch {
+    cobranzaAbierta = 0;
+  }
+  try {
+    const ocs = await db.select({ id: s.ordenesCompra.id }).from(s.ordenesCompra);
+    ocEmitidas = ocs.length;
+  } catch {
+    ocEmitidas = 0;
+  }
+
+  const recientes = todos.slice(0, 12);
+
+  return {
+    kpis: {
+      total: todos.length,
+      enProceso,
+      creadosSemana,
+      movidosSemana,
+      enviadas,
+      ganadas,
+      perdidas,
+      cobranzaAbierta,
+      ocEmitidas,
+    },
+    porEstatus,
+    recientes,
+  };
+}
+
 export async function listMarcas() {
   const db = getDb();
   return db

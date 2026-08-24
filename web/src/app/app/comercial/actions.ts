@@ -1444,6 +1444,35 @@ export async function emitirOrdenCompraAction(formData: FormData) {
     const seq = String(Date.now()).slice(-4);
     const folio = `OC-${exp.codigo}-${seq}`;
 
+    const selectedIds = formData
+      .getAll("partidaIds")
+      .map((v) => String(v))
+      .filter(Boolean);
+
+    const allPartidas = await db
+      .select({
+        id: s.partidas.id,
+        numero: s.partidas.numero,
+        descripcion: s.partidas.descripcion,
+        cantidad: s.partidas.cantidad,
+        unidad: s.partidas.unidad,
+      })
+      .from(s.partidas)
+      .where(eq(s.partidas.expedienteId, expedienteId))
+      .orderBy(asc(s.partidas.numero));
+
+    const lineas =
+      selectedIds.length > 0
+        ? allPartidas.filter((p) => selectedIds.includes(p.id))
+        : allPartidas;
+
+    if (!lineas.length) {
+      return {
+        ok: false as const,
+        error: "No hay partidas para incluir en la OC",
+      };
+    }
+
     const [doc] = await db
       .insert(s.documentos)
       .values({
@@ -1470,6 +1499,19 @@ export async function emitirOrdenCompraAction(formData: FormData) {
       })
       .returning({ id: s.ordenesCompra.id, folio: s.ordenesCompra.folio });
 
+    if (oc?.id) {
+      await db.insert(s.ordenCompraPartidas).values(
+        lineas.map((p) => ({
+          ordenCompraId: oc.id,
+          partidaId: p.id,
+          numero: p.numero,
+          descripcion: p.descripcion,
+          cantidad: String(p.cantidad ?? "1"),
+          unidad: p.unidad || "PZA",
+        })),
+      );
+    }
+
     await db
       .update(s.expedientes)
       .set({ estatus: "COMPRA", updatedAt: new Date() })
@@ -1478,10 +1520,15 @@ export async function emitirOrdenCompraAction(formData: FormData) {
     await logBitacora(
       expedienteId,
       userId ?? undefined,
-      `OC emitida ${folio} · ${prov.razonSocial}`,
+      `OC emitida ${folio} · ${prov.razonSocial} · ${lineas.length} partidas`,
       undefined,
       "COMPRA",
-      { folio, proveedorId: prov.id, montoTotal: montoRaw || null },
+      {
+        folio,
+        proveedorId: prov.id,
+        montoTotal: montoRaw || null,
+        partidas: lineas.length,
+      },
     );
 
     // Marca tarea COMPRA del checklist si existe
