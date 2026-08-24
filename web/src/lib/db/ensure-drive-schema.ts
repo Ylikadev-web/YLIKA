@@ -70,5 +70,25 @@ export async function ensureDriveSchema() {
     WHERE NOT EXISTS (SELECT 1 FROM roles WHERE codigo = 'COMPRAS')
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS caja_chica_movimientos (
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+      expediente_id uuid NOT NULL REFERENCES expedientes(id) ON DELETE CASCADE,
+      concepto text NOT NULL,
+      monto numeric(14,2) NOT NULL,
+      moneda text NOT NULL DEFAULT 'MXN',
+      estatus text NOT NULL DEFAULT 'POR_COMPROBAR',
+      fecha timestamptz NOT NULL DEFAULT now(),
+      solicitado_por uuid NOT NULL REFERENCES users(id),
+      aprobado_por uuid REFERENCES users(id),
+      aprobado_at timestamptz,
+      motivo_rechazo text,
+      documento_id uuid REFERENCES documentos(id),
+      notas text,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      updated_at timestamptz NOT NULL DEFAULT now()
+    )
+  `;
+
   done = true;
 }

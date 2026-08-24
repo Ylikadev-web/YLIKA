@@ -15,6 +15,7 @@ import { PlazosPanel } from "@/components/comercial/plazos-panel";
 import { HandoffPanel } from "@/components/comercial/handoff-panel";
 import { OrdenCompraPanel } from "@/components/comercial/orden-compra-panel";
 import { CobranzaPanel } from "@/components/comercial/cobranza-panel";
+import { CajaChicaPanel } from "@/components/comercial/caja-chica-panel";
 import { DeleteSolicitudButton } from "@/components/comercial/delete-solicitud-button";
 import { ProcessTree } from "@/components/comercial/process-tree";
 import { WorkflowPanel } from "@/components/comercial/workflow-panel";
@@ -28,6 +29,7 @@ import {
   listDocumentosForExpediente,
   listOrdenesCompraExpediente,
 } from "@/lib/db/queries";
+import { listCajaChicaExpediente } from "@/lib/db/caja-chica";
 import { ensureDriveSchema } from "@/lib/db/ensure-drive-schema";
 import { ensureRequisitosBases } from "@/lib/db/requisitos";
 import { listTareasExpediente } from "@/lib/db/tareas";
@@ -59,6 +61,7 @@ export default async function ExpedientePage({
     documentos,
     ordenes,
     cobranza,
+    cajaChica,
   ] = await Promise.all([
     getExpedienteById(id),
     auth(),
@@ -70,6 +73,7 @@ export default async function ExpedientePage({
     listDocumentosForExpediente(id),
     listOrdenesCompraExpediente(id),
     getCobranzaExpediente(id),
+    listCajaChicaExpediente(id),
   ]);
   if (!exp) notFound();
 
@@ -81,12 +85,15 @@ export default async function ExpedientePage({
     roles.includes("DIRECTOR") ||
     roles.includes("ADMIN_FINANZAS") ||
     roles.includes("ADMIN_SISTEMAS");
-
+  const canFinance = canApprove;
   const usedAliases = new Set(exp.cotizaciones.map((c) => c.alias));
   const nextAlias =
     ["P1", "P2", "P3", "P4", "P5"].find((a) => !usedAliases.has(a)) ?? "P1";
 
   const tareasPend = tareas.filter((t) => t.estado === "PENDIENTE").length;
+  const cajaPend = cajaChica.filter((m) => m.estatus === "POR_COMPROBAR")
+    .length;
+  const checklistBadge = tareasPend + cajaPend || null;
   const relAsignadas = new Set(
     relaciones.filter((r) => r.proveedorId).map((r) => r.partidaId),
   ).size;
@@ -154,10 +161,11 @@ export default async function ExpedientePage({
             id: "checklist",
             label: "Checklist",
             short: "Chk",
-            badge: tareasPend || null,
+            badge: checklistBadge,
             hidden:
               tareas.length === 0 &&
               ordenes.length === 0 &&
+              cajaChica.length === 0 &&
               !cobranza &&
               ![
                 "GANADA",
@@ -300,6 +308,23 @@ export default async function ExpedientePage({
                   }
                 />
               ) : null}
+              <CajaChicaPanel
+                expedienteId={exp.id}
+                canFinance={canFinance}
+                movimientos={cajaChica.map((m) => ({
+                  id: m.id,
+                  concepto: m.concepto,
+                  monto: m.monto,
+                  moneda: m.moneda,
+                  estatus: m.estatus,
+                  fecha: m.fecha,
+                  solicitadoNombre: m.solicitadoNombre,
+                  documentoId: m.documentoId,
+                  documentoNombre: m.documentoNombre,
+                  motivoRechazo: m.motivoRechazo,
+                  notas: m.notas,
+                }))}
+              />
             </div>
           ),
           edicion: (

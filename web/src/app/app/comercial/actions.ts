@@ -1674,3 +1674,241 @@ export async function updateCobranzaAction(formData: FormData) {
     };
   }
 }
+
+async function resolveActorUserId() {
+  const user = await requireUser();
+  if (user.id === "demo-miguel") {
+    return (await resolveUserIdByEmail("miguel@ylika.local")) ?? user.id;
+  }
+  return user.id;
+}
+
+function canFinanceRoles(roles: string[]) {
+  return (
+    roles.includes("ADMIN_FINANZAS") ||
+    roles.includes("DIRECTOR") ||
+    roles.includes("ADMIN_SISTEMAS")
+  );
+}
+
+/** Registrar gasto de caja chica (queda POR_COMPROBAR) */
+export async function solicitarCajaChicaAction(formData: FormData) {
+  try {
+    const user = await requireUser();
+    const roles = (user as { roles?: string[] }).roles ?? [];
+    const expedienteId = String(formData.get("expedienteId") || "");
+    const concepto = String(formData.get("concepto") || "").trim();
+    const monto = String(formData.get("monto") || "").trim();
+    const notas = String(formData.get("notas") || "").trim() || null;
+    if (!expedienteId || !concepto || !monto) {
+      return { ok: false as const, error: "Concepto y monto requeridos" };
+    }
+    const n = Number(monto);
+    if (!Number.isFinite(n) || n <= 0) {
+      return { ok: false as const, error: "Monto inválido" };
+    }
+
+    const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+    await ensureDriveSchema();
+
+    const db = getDb();
+    const userId = await resolveActorUserId();
+    if (!userId || userId === "demo-miguel") {
+      return { ok: false as const, error: "Usuario no resuelto en BD" };
+    }
+
+    await db.insert(s.cajaChicaMovimientos).values({
+      expedienteId,
+      concepto,
+      monto: String(n),
+      estatus: "POR_COMPROBAR",
+      solicitadoPor: userId,
+      notas,
+    });
+
+    await logBitacora(
+      expedienteId,
+      userId,
+      `Caja chica: ${concepto} · $${n}`,
+      undefined,
+      undefined,
+      { monto: n, roles },
+    );
+
+    revalidatePath(`/app/comercial/${expedienteId}`);
+    revalidatePath("/app/tesoreria");
+    revalidatePath("/app");
+    return { ok: true as const };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "No se pudo registrar caja chica",
+    };
+  }
+}
+
+/** Adjuntar comprobante (PDF/imagen) al movimiento */
+export async function adjuntarComprobanteCajaAction(formData: FormData) {
+  try {
+    await requireUser();
+    const expedienteId = String(formData.get("expedienteId") || "");
+    const movimientoId = String(formData.get("movimientoId") || "");
+    const file = formData.get("file");
+    if (!expedienteId || !movimientoId || !(file instanceof File) || !file.size) {
+      return { ok: false as const, error: "Archivo o movimiento faltante" };
+    }
+
+    const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+    await ensureDriveSchema();
+
+    const db = getDb();
+    const userId = await resolveActorUserId();
+    const { storeFile } = await import("@/lib/storage");
+    const stored = await storeFile(file, {
+      folder: `expedientes/${expedienteId}/caja-chica`,
+      filename: file.name,
+      contentType: file.type || undefined,
+    });
+
+    const [exp] = await db
+      .select({ empresaId: s.expedientes.empresaId })
+      .from(s.expedientes)
+      .where(eq(s.expedientes.id, expedienteId))
+      .limit(1);
+
+    const [doc] = await db
+      .insert(s.documentos)
+      .values({
+        expedienteId,
+        empresaId: exp?.empresaId ?? null,
+        tipo: "OTRO",
+        nombre: `Comprobante caja · ${file.name}`,
+        storagePath: stored.path,
+        mimeType: file.type || null,
+        uploadedBy: userId ?? null,
+      })
+      .returning({ id: s.documentos.id });
+
+    await db
+      .update(s.cajaChicaMovimientos)
+      .set({
+        documentoId: doc?.id ?? null,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(s.cajaChicaMovimientos.id, movimientoId),
+          eq(s.cajaChicaMovimientos.expedienteId, expedienteId),
+        ),
+      );
+
+    await logBitacora(
+      expedienteId,
+      userId,
+      `Comprobante caja chica adjunto: ${file.name}`,
+    );
+
+    revalidatePath(`/app/comercial/${expedienteId}`);
+    revalidatePath("/app/tesoreria");
+    return { ok: true as const };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "No se pudo adjuntar comprobante",
+    };
+  }
+}
+
+export async function comprobarCajaChicaAction(formData: FormData) {
+  try {
+    const user = await requireUser();
+    const roles = (user as { roles?: string[] }).roles ?? [];
+    if (!canFinanceRoles(roles)) {
+      return { ok: false as const, error: "Solo Finanzas/Dirección puede comprobar" };
+    }
+    const expedienteId = String(formData.get("expedienteId") || "");
+    const movimientoId = String(formData.get("movimientoId") || "");
+    if (!expedienteId || !movimientoId) {
+      return { ok: false as const, error: "Datos incompletos" };
+    }
+
+    const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+    await ensureDriveSchema();
+    const db = getDb();
+    const userId = await resolveActorUserId();
+
+    await db
+      .update(s.cajaChicaMovimientos)
+      .set({
+        estatus: "COMPROBADO",
+        aprobadoPor: userId,
+        aprobadoAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(s.cajaChicaMovimientos.id, movimientoId),
+          eq(s.cajaChicaMovimientos.expedienteId, expedienteId),
+        ),
+      );
+
+    await logBitacora(expedienteId, userId, "Caja chica comprobada");
+    revalidatePath(`/app/comercial/${expedienteId}`);
+    revalidatePath("/app/tesoreria");
+    revalidatePath("/app");
+    return { ok: true as const };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "No se pudo comprobar",
+    };
+  }
+}
+
+export async function rechazarCajaChicaAction(formData: FormData) {
+  try {
+    const user = await requireUser();
+    const roles = (user as { roles?: string[] }).roles ?? [];
+    if (!canFinanceRoles(roles)) {
+      return { ok: false as const, error: "Solo Finanzas/Dirección puede rechazar" };
+    }
+    const expedienteId = String(formData.get("expedienteId") || "");
+    const movimientoId = String(formData.get("movimientoId") || "");
+    const motivo = String(formData.get("motivo") || "").trim();
+    if (!expedienteId || !movimientoId || !motivo) {
+      return { ok: false as const, error: "Motivo de rechazo requerido" };
+    }
+
+    const { ensureDriveSchema } = await import("@/lib/db/ensure-drive-schema");
+    await ensureDriveSchema();
+    const db = getDb();
+    const userId = await resolveActorUserId();
+
+    await db
+      .update(s.cajaChicaMovimientos)
+      .set({
+        estatus: "RECHAZADO",
+        motivoRechazo: motivo,
+        aprobadoPor: userId,
+        aprobadoAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(s.cajaChicaMovimientos.id, movimientoId),
+          eq(s.cajaChicaMovimientos.expedienteId, expedienteId),
+        ),
+      );
+
+    await logBitacora(expedienteId, userId, `Caja chica rechazada: ${motivo}`);
+    revalidatePath(`/app/comercial/${expedienteId}`);
+    revalidatePath("/app/tesoreria");
+    revalidatePath("/app");
+    return { ok: true as const };
+  } catch (e) {
+    return {
+      ok: false as const,
+      error: e instanceof Error ? e.message : "No se pudo rechazar",
+    };
+  }
+}

@@ -12,6 +12,7 @@ import {
   listPendientesAprobacion,
   listPrestamosActivos,
 } from "@/lib/db/bolsa";
+import { listCajaChicaPorComprobar } from "@/lib/db/caja-chica";
 import { getDb } from "@/lib/db";
 import * as s from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
@@ -20,7 +21,9 @@ import {
   aprobarMovimientoAction,
   asignarBolsaAction,
   bootstrapBolsaGeneralAction,
+  comprobarCajaChicaTesoreriaAction,
   crearBolsaPropiaAction,
+  rechazarCajaChicaTesoreriaAction,
   rechazarMovimientoAction,
 } from "./actions";
 
@@ -57,12 +60,21 @@ export default async function TesoreriaPage() {
     await ensureBolsaGeneral(user.userId);
   }
 
-  const [bolsas, pendientes, prestamos, team] = await Promise.all([
-    listBolsasForUser(user.userId, user.roles),
-    isBolsaAdmin(user.roles) ? listPendientesAprobacion() : Promise.resolve([]),
-    listPrestamosActivos(user.userId),
-    getDb().select({ id: s.users.id, name: s.users.name, email: s.users.email }).from(s.users),
-  ]);
+  const canFinance =
+    user.roles.includes("ADMIN_FINANZAS") ||
+    user.roles.includes("DIRECTOR") ||
+    user.roles.includes("ADMIN_SISTEMAS");
+
+  const [bolsas, pendientes, prestamos, team, cajaPorComprobar] =
+    await Promise.all([
+      listBolsasForUser(user.userId, user.roles),
+      isBolsaAdmin(user.roles) ? listPendientesAprobacion() : Promise.resolve([]),
+      listPrestamosActivos(user.userId),
+      getDb()
+        .select({ id: s.users.id, name: s.users.name, email: s.users.email })
+        .from(s.users),
+      canFinance ? listCajaChicaPorComprobar(20) : Promise.resolve([]),
+    ]);
 
   const admin = isBolsaAdmin(user.roles);
 
@@ -93,6 +105,76 @@ export default async function TesoreriaPage() {
         </form>
       }
     >
+      {cajaPorComprobar.length > 0 && (
+        <Glass className="mb-4 float-card p-4">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold">
+                Caja chica · por comprobar · {cajaPorComprobar.length}
+              </p>
+              <p className="text-xs text-[var(--text-muted)]">
+                Gastos de expediente · adjuntar comprobante en el expediente
+              </p>
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {cajaPorComprobar.map((m) => (
+              <li
+                key={m.id}
+                className="glass-thin flex flex-wrap items-center justify-between gap-3 rounded-2xl px-3 py-2.5"
+              >
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">
+                    {formatMoney(Number(m.monto), m.moneda)} · {m.concepto}
+                  </p>
+                  <p className="truncate text-xs text-[var(--text-muted)]">
+                    <Link
+                      href={`/app/comercial/${m.expedienteId}?tab=checklist`}
+                      className="underline-offset-2 hover:underline"
+                    >
+                      {m.expedienteCodigo}
+                    </Link>
+                    {" · "}
+                    {m.solicitadoNombre ?? "—"}
+                    {m.documentoNombre
+                      ? ` · ${m.documentoNombre}`
+                      : " · sin comprobante"}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <form action={comprobarCajaChicaTesoreriaAction}>
+                    <input type="hidden" name="movimientoId" value={m.id} />
+                    <input
+                      type="hidden"
+                      name="expedienteId"
+                      value={m.expedienteId}
+                    />
+                    <Button type="submit" size="sm" variant="accent">
+                      Comprobar
+                    </Button>
+                  </form>
+                  <form
+                    action={rechazarCajaChicaTesoreriaAction}
+                    className="flex gap-1"
+                  >
+                    <input type="hidden" name="movimientoId" value={m.id} />
+                    <input
+                      type="hidden"
+                      name="expedienteId"
+                      value={m.expedienteId}
+                    />
+                    <input type="hidden" name="motivo" value="Rechazado" />
+                    <Button type="submit" size="sm" variant="ghost">
+                      Rechazar
+                    </Button>
+                  </form>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Glass>
+      )}
+
       {pendientes.length > 0 && (
         <Glass className="mb-4 float-card p-4">
           <div className="mb-3 flex items-center justify-between">

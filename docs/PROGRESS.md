@@ -1,14 +1,14 @@
 # YLIKA Ops — Progress
 
 > Flujo: **Laura → Ventas → Itza → Nesim → (si gana) recotización → Compras (OC) → remisión → cobranza**.  
-> **Prioridad:** estructura · Drive diferido · rol COMPRAS activo.
+> **Prioridad:** estructura · Drive diferido · caja chica por expediente lista.
 
 ---
 
 ## Expectativa final
 
 ```
-█████████████████░░░  86%
+██████████████████░░  88%
 ```
 
 ---
@@ -23,8 +23,8 @@
 | 3 Post-ganada | 94 |
 | 4 Drive | 60 ⏸ |
 | 5 Usuarios / roles | 95 |
-| 6 Docs | 82 |
-| 7 Tesorería | 55 |
+| 6 Docs | 84 |
+| 7 Tesorería | 72 |
 | 8 UX | 88 |
 | 9 Obra | 10 |
 | Reportes / cliente | 80 |
@@ -35,17 +35,17 @@
 
 | # | Entrega | Estado |
 |---|---------|--------|
+| C1 | **Caja chica por expediente** (POR_COMPROBAR → COMPROBADO/RECHAZADO) | ✅ |
+| — | Panel en Checklist + lista en Tesorería + pendientes Itza | ✅ |
 | B7 | Rol **COMPRAS** separado de Ventas | ✅ |
-| — | Handoff RECOTIZACION/COMPRA → responsable Compras | ✅ |
-| — | Bandeja/áreas/workflow alineados | ✅ |
 | C0 | Drive | ⏸ |
-| C1 | Caja chica | ⬜ siguiente candidato |
 
-**Acción tuya:** en Configuración → Usuarios, asigna rol **Compras (OC / proveedores)** a Fernando (o quien opere OC).
+**Uso:** en el expediente → Checklist → registrar gasto → adjuntar comprobante → Finanzas comprueba (ahí o en Bolsa/Tesorería).
 
 ---
 
-## Por qué COMPRAS antes que caja chica
+## Siguiente (cuando prioricen)
 
-Cierra el dueño de la etapa post-ganada (estructura del pasillo).  
-Caja chica amplía Tesorería; ya existe Bolsa.
+1. Drive ON (C0) — credenciales Vercel  
+2. Parsers PDF/Excel reales  
+3. Caja chica ↔ Bolsa (si Tesorería lo pide)

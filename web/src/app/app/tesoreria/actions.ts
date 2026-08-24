@@ -344,3 +344,18 @@ export async function archivarBolsaAction(formData: FormData) {
 
   revalidateBolsa();
 }
+
+/** Wrappers void para <form action> (comprobar/rechazar caja chica) */
+export async function comprobarCajaChicaTesoreriaAction(formData: FormData) {
+  const { comprobarCajaChicaAction } = await import(
+    "@/app/app/comercial/actions"
+  );
+  await comprobarCajaChicaAction(formData);
+}
+
+export async function rechazarCajaChicaTesoreriaAction(formData: FormData) {
+  const { rechazarCajaChicaAction } = await import(
+    "@/app/app/comercial/actions"
+  );
+  await rechazarCajaChicaAction(formData);
+}
