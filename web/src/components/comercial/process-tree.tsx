@@ -98,8 +98,11 @@ export function ProcessTree({
                   )}
                 >
                   <span
-                    className="h-1.5 w-1.5 shrink-0 rounded-full"
-                    style={{ background: stage.color }}
+                    className={cn(
+                      "h-1.5 w-1.5 shrink-0 rounded-full",
+                      active && "status-dot status-dot-active",
+                    )}
+                    style={{ background: stage.color, color: stage.color }}
                   />
                   <span className="max-w-[72px] truncate">{stage.label}</span>
                 </div>
